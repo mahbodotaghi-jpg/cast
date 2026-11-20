@@ -153,3 +153,8 @@ Build remains available through the `.github/workflows/build.yml` workflow: push
 New/updated modules: Custom Accessories (client-side tool glint finishes), Custom Glint, Custom Crosshair, Custom FOV, Free Look, Jump Circles, and Custom Animation. The ClickGUI supports a 67-inspired Panel layout (all categories in columns) and Dropdown layout (one selected category); switch it in Themes > GUI layout. The Galaxy Sky Saturn now uses a front-hemisphere 3D mesh, smoother atmospheric bands, ring divisions, and a subtle ring shadow to avoid the former overlapping-disc artifact.
 
 The visual effects are client-side. This archive is source code; build it with the included GitHub Actions workflow or Gradle 8.12 and Java 21.
+
+
+## Custom Accessories (client-only)
+
+Enable **Visuals → Custom Accessories**, choose Galaxy / Rainbow / Aurora / Gold, and keep **Show shimmer on tools** enabled. The client adds a cosmetic shimmer to swords, pickaxes, axes, shovels, hoes, the mace and trident, including tools without enchantments. It only changes local rendering; it does not edit ItemStack components, NBT, inventory contents, or network packets. The vanilla tool texture remains visible underneath the coloured shimmer.

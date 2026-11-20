@@ -346,7 +346,7 @@ public final class CustomSky extends Module {
 
         // Saturn's rings are layered behind the globe, then overlaid in front of it.
         BufferBuilder b = RenderUtil.tris();
-        ringHalf(b, m, cx, cy, cz, true);
+        ringHalf(b, m, cx, cy, cz, pr, true);
         RenderUtil.draw(b);
 
         // Draw only the camera-facing hemisphere as a 3D latitude/longitude mesh.
@@ -371,7 +371,7 @@ public final class CustomSky extends Module {
         RenderUtil.draw(b);
 
         b = RenderUtil.tris();
-        ringHalf(b, m, cx, cy, cz, false);
+        ringHalf(b, m, cx, cy, cz, pr, false);
         RenderUtil.draw(b);
     }
 
@@ -433,14 +433,14 @@ public final class CustomSky extends Module {
     }
 
     /** Render one half of Saturn's multi-band ring system, leaving a visible Cassini-like division. */
-    private void ringHalf(BufferBuilder b, Matrix4f m, double cx, double cy, double cz, boolean back) {
-        final double[] radii = {1.48, 1.62, 1.82, 1.96, 2.08, 2.17, 2.30, 2.48, 2.70, 2.86};
+    private void ringHalf(BufferBuilder b, Matrix4f m, double cx, double cy, double cz, double planetRadius, boolean back) {
+        final double[] radii = {1.42, 1.58, 1.78, 1.94, 2.06, 2.18, 2.34, 2.52, 2.76, 2.98};
         final int[] colours = {
                 0xA88C60, 0xE5D4AF, 0xB59A70, 0xD8C49A,
                 0x5E4B37, // dark division between the brighter ring lanes
                 0xBDA780, 0xE8D7B2, 0x9B815D, 0xD2BD92
         };
-        final float[] alpha = {0.72f, 0.94f, 0.76f, 0.88f, 0.42f, 0.78f, 0.96f, 0.70f, 0.82f};
+        final float[] alpha = {0.96f, 1.0f, 0.94f, 1.0f, 0.92f, 0.96f, 1.0f, 0.94f, 0.98f};
         int n = 192;
         for (int k = 0; k < n; k++) {
             double a0 = TAU * k / n, a1 = TAU * (k + 1) / n;
@@ -453,12 +453,12 @@ public final class CustomSky extends Module {
                 int colour = ColorUtil.lerp(0x554633, base, (float) angularShade);
                 int argb = ColorUtil.argb(colour, alpha[band]);
                 double in = radii[band], out = radii[band + 1];
-                ringPoint(b, m, cx, cy, cz, in, a0, argb);
-                ringPoint(b, m, cx, cy, cz, out, a0, argb);
-                ringPoint(b, m, cx, cy, cz, out, a1, argb);
-                ringPoint(b, m, cx, cy, cz, in, a0, argb);
-                ringPoint(b, m, cx, cy, cz, out, a1, argb);
-                ringPoint(b, m, cx, cy, cz, in, a1, argb);
+                ringPoint(b, m, cx, cy, cz, planetRadius * in, a0, argb);
+                ringPoint(b, m, cx, cy, cz, planetRadius * out, a0, argb);
+                ringPoint(b, m, cx, cy, cz, planetRadius * out, a1, argb);
+                ringPoint(b, m, cx, cy, cz, planetRadius * in, a0, argb);
+                ringPoint(b, m, cx, cy, cz, planetRadius * out, a1, argb);
+                ringPoint(b, m, cx, cy, cz, planetRadius * in, a1, argb);
             }
         }
     }

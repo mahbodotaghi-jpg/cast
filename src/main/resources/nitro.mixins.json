@@ -12,7 +12,8 @@
     "GameRendererMixin",
     "InGameHudMixin",
     "ItemStackMixin",
-    "ItemRendererMixin"
+    "ItemRendererMixin",
+    "ItemMixin"
   ],
   "injectors": {
     "defaultRequire": 1

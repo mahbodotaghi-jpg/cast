@@ -17,10 +17,10 @@ public final class CustomAccessories extends Module {
     public static CustomAccessories INSTANCE;
     private final Setting.Choice<Finish> finish = new Setting.Choice<>("Tool finish", Finish.GALAXY, Finish.class);
     private final Setting.Num speed = new Setting.Num("Animation speed", 1.0, 0.1, 4.0, 0.1);
-    private final Setting.Bool enchantTools = new Setting.Bool("Give tools a glint", true);
+    private final Setting.Bool enchantTools = new Setting.Bool("Show shimmer on tools", true);
 
     public CustomAccessories() {
-        super("Custom Accessories", "Adds animated galaxy, rainbow, aurora or gold glint finishes to tools (client-side).", Category.VISUALS);
+        super("Custom Accessories", "Adds a local-only animated Galaxy, Rainbow, Aurora or Gold shimmer to supported tools. The original tool texture stays intact; no item data or packets are changed.", Category.VISUALS);
         add(finish, speed, enchantTools);
         INSTANCE = this;
     }
