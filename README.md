@@ -146,3 +146,10 @@ v13: removed Favorites, the Nitro theme (default is now Ocean), Swing Animation 
 - Existing combat automation was not modified to hide from or bypass server anti-cheat systems. Check the rules of the server you play on before enabling automated gameplay modules.
 
 Build remains available through the `.github/workflows/build.yml` workflow: push the project or run the workflow manually, then download the `nitro-jar` artifact from Actions.
+
+
+## NITRO v0.1.8 visual update
+
+New/updated modules: Custom Accessories (client-side tool glint finishes), Custom Glint, Custom Crosshair, Custom FOV, Free Look, Jump Circles, and Custom Animation. The ClickGUI supports a 67-inspired Panel layout (all categories in columns) and Dropdown layout (one selected category); switch it in Themes > GUI layout. The Galaxy Sky Saturn now uses a front-hemisphere 3D mesh, smoother atmospheric bands, ring divisions, and a subtle ring shadow to avoid the former overlapping-disc artifact.
+
+The visual effects are client-side. This archive is source code; build it with the included GitHub Actions workflow or Gradle 8.12 and Java 21.

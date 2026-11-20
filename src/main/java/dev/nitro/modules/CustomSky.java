@@ -332,7 +332,7 @@ public final class CustomSky extends Module {
     // ---- ringed planet ----------------------------------------------------------------------------------------
 
     // Offset the planet slightly above the luminous horizon, with a broad, shallow ring plane.
-    private static final double PLANET_AZ = 1.92, PLANET_EL = 0.48, TILT = -0.36, FLAT = 0.24;
+    private static final double PLANET_AZ = 1.92, PLANET_EL = 0.38, TILT = -0.27, FLAT = 0.32;
 
     private void drawPlanet(Matrix4f m, float radius) {
         double dx = Math.cos(PLANET_EL) * Math.cos(PLANET_AZ);
@@ -341,7 +341,7 @@ public final class CustomSky extends Module {
         basis(dx, dy, dz);
 
         double dist = radius * 0.95;
-        double pr = dist * Math.tan(Math.toRadians(5.5));
+        double pr = dist * Math.tan(Math.toRadians(4.1));
         double cx = dx * dist, cy = dy * dist, cz = dz * dist;
 
         // Saturn's rings are layered behind the globe, then overlaid in front of it.
@@ -349,37 +349,74 @@ public final class CustomSky extends Module {
         ringHalf(b, m, cx, cy, cz, true);
         RenderUtil.draw(b);
 
-        // Shaded globe with broad cream/gold atmospheric bands and a subtle polar fade.
+        // Draw only the camera-facing hemisphere as a 3D latitude/longitude mesh.
+        // The former full 0..2pi projection placed the near and far halves on top of each other,
+        // which produced the spoked / rosette artifact visible in the supplied screenshot.
         b = RenderUtil.tris();
-        int n = 144;
-        for (int k = 0; k < n; k++) {
-            double a0 = TAU * k / n, a1 = TAU * (k + 1) / n;
-            double am = (a0 + a1) * 0.5;
-            double nx = Math.cos(am), ny = Math.sin(am);
-            double latitude = ny;
-            double bands = Math.sin(latitude * 36.0 + 0.85 * Math.sin(latitude * 8.5));
-            int band = bands > 0.32 ? 0xF2E1B8 : bands < -0.32 ? 0xA87949 : 0xD4B47B;
-            // Fine, low-contrast band detail keeps the globe from reading as a flat yellow disc.
-            double fine = Math.sin(latitude * 91.0 + 0.35 * Math.sin(latitude * 17.0));
-            band = ColorUtil.lerp(band, fine > 0 ? 0xE7D3A4 : 0xBD965F, 0.13f);
-            double polar = Math.max(0.0, (Math.abs(latitude) - 0.78) / 0.22);
-            band = ColorUtil.lerp(band, 0xEAD9B7, (float)(polar * 0.42));
-
-            // Soft upper-left lighting and a darker lower-right limb.
-            double light = Math.max(0.18, Math.min(1.0, 0.70 - nx * 0.23 + ny * 0.20));
-            int shade = ColorUtil.lerp(0x463528, band, (float) light);
-            int rim = ColorUtil.lerp(shade, 0xFFF0CF,
-                    (float)Math.max(0.0, -nx * 0.42 + ny * 0.46) * 0.28f);
-
-            put(b, m, cx, cy, cz, 0.0, 0.0, ColorUtil.argb(0xD4B77F, 1f));
-            put(b, m, cx, cy, cz, nx * pr, ny * pr, ColorUtil.argb(rim, 1f));
-            put(b, m, cx, cy, cz, Math.cos(a1) * pr, Math.sin(a1) * pr, ColorUtil.argb(shade, 1f));
+        final int latSteps = 56, lonSteps = 72;
+        for (int iy = 0; iy < latSteps; iy++) {
+            double lat0 = -Math.PI / 2.0 + Math.PI * iy / latSteps;
+            double lat1 = -Math.PI / 2.0 + Math.PI * (iy + 1) / latSteps;
+            for (int ix = 0; ix < lonSteps; ix++) {
+                double lon0 = -Math.PI / 2.0 + Math.PI * ix / lonSteps;
+                double lon1 = -Math.PI / 2.0 + Math.PI * (ix + 1) / lonSteps;
+                saturnVertex(b, m, cx, cy, cz, pr, lat0, lon0);
+                saturnVertex(b, m, cx, cy, cz, pr, lat0, lon1);
+                saturnVertex(b, m, cx, cy, cz, pr, lat1, lon1);
+                saturnVertex(b, m, cx, cy, cz, pr, lat0, lon0);
+                saturnVertex(b, m, cx, cy, cz, pr, lat1, lon1);
+                saturnVertex(b, m, cx, cy, cz, pr, lat1, lon0);
+            }
         }
         RenderUtil.draw(b);
 
         b = RenderUtil.tris();
         ringHalf(b, m, cx, cy, cz, false);
         RenderUtil.draw(b);
+    }
+
+    /** Adds a smoothly shaded front-hemisphere vertex with genuine depth for a rounded globe. */
+    private void saturnVertex(BufferBuilder b, Matrix4f m, double cx, double cy, double cz,
+                              double radius, double latitude, double longitude) {
+        double cl = Math.cos(latitude);
+        double nx = cl * Math.sin(longitude);
+        double ny = Math.sin(latitude);
+        double nz = cl * Math.cos(longitude); // positive for the visible hemisphere
+
+        // Saturn's cream/gold atmospheric belts, with fine banding instead of polygon spokes.
+        double bands = Math.sin(latitude * 40.0 + 0.42 * Math.sin(latitude * 11.0)
+                + 0.035 * Math.sin(longitude * 7.0));
+        int base = bands > 0.38 ? 0xF0E2C2 : bands < -0.38 ? 0xA9784F : 0xD6BA87;
+        double fine = Math.sin(latitude * 112.0 + 0.38 * Math.sin(latitude * 21.0));
+        base = ColorUtil.lerp(base, fine > 0 ? 0xEAD9B6 : 0xB78D61, 0.11f);
+
+        // A subtle warm storm oval, placed on the visible hemisphere.
+        double stormOval = Math.exp(-Math.pow((latitude - 0.10) / 0.045, 2))
+                * Math.exp(-Math.pow((longitude + 0.28) / 0.30, 2));
+        base = ColorUtil.lerp(base, 0xB96F48, (float)(stormOval * 0.62));
+
+        // The rings cast a soft, narrow shadow over the globe where their plane crosses it.
+        double ringPlaneY = -nx * Math.sin(TILT) + ny * Math.cos(TILT);
+        double ringShadow = Math.exp(-Math.pow(ringPlaneY / 0.055, 2)) * 0.30;
+        base = ColorUtil.lerp(base, 0x5D4837, (float)ringShadow);
+
+        double lightAmount = Math.max(0.08, Math.min(1.0,
+                0.20 + 0.80 * Math.max(0.0, nx * -0.38 + ny * 0.48 + nz * 0.78)));
+        double limb = Math.pow(Math.max(0.0, 1.0 - nz), 1.65);
+        int shaded = ColorUtil.lerp(0x30251F, base, (float)lightAmount);
+        shaded = ColorUtil.lerp(shaded, 0x5B4436, (float)(limb * 0.58));
+        shaded = ColorUtil.lerp(shaded, 0xF8E8C9, (float)(0.12 * nz));
+
+        // Local tangent basis (u,v) plus the planet-facing normal (d) gives the mesh real depth.
+        double dx = Math.cos(PLANET_EL) * Math.cos(PLANET_AZ);
+        double dy = Math.sin(PLANET_EL);
+        double dz = Math.cos(PLANET_EL) * Math.sin(PLANET_AZ);
+        double ox = nx * radius, oy = ny * radius, oz = nz * radius;
+        b.vertex(m,
+                (float)(cx + bas[0] * ox + bas[3] * oy - dx * oz),
+                (float)(cy + bas[1] * ox + bas[4] * oy - dy * oz),
+                (float)(cz + bas[2] * ox + bas[5] * oy - dz * oz))
+                .color(ColorUtil.argb(shaded, 1f));
     }
 
     /** Adds a vertex at centre + u*ox + v*oy using the current basis. */

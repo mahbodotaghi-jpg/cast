@@ -50,8 +50,18 @@ public final class Theme {
     public static final Setting.Color CUSTOM_A1 = new Setting.Color("Custom accent 1", 0xFF5CAA);
     public static final Setting.Color CUSTOM_A2 = new Setting.Color("Custom accent 2", 0xFFD166);
 
-    private static final List<Setting<?>> ALL = List.<Setting<?>>of(PRESET, ANIMATED, CUSTOM_A1, CUSTOM_A2);
-    private static final List<Setting<?>> SHOWN = List.<Setting<?>>of(ANIMATED, CUSTOM_A1, CUSTOM_A2);
+    public enum GuiLayout {
+        PANEL("Panel (all categories)"), DROPDOWN("Dropdown (one category)");
+        private final String label;
+        GuiLayout(String label) { this.label = label; }
+        @Override public String toString() { return label; }
+    }
+
+    public static final Setting.Choice<GuiLayout> GUI_LAYOUT =
+            new Setting.Choice<>("GUI layout", GuiLayout.PANEL, GuiLayout.class);
+
+    private static final List<Setting<?>> ALL = List.<Setting<?>>of(PRESET, ANIMATED, CUSTOM_A1, CUSTOM_A2, GUI_LAYOUT);
+    private static final List<Setting<?>> SHOWN = List.<Setting<?>>of(ANIMATED, CUSTOM_A1, CUSTOM_A2, GUI_LAYOUT);
 
     static {
         CUSTOM_A1.showIf(Theme::isCustom);

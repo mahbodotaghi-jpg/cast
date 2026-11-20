@@ -8,7 +8,11 @@
     "HandledScreenAccessor",
     "HeldItemRendererMixin",
     "EntityMixin",
-    "SimpleOptionAccessor"
+    "SimpleOptionAccessor",
+    "GameRendererMixin",
+    "InGameHudMixin",
+    "ItemStackMixin",
+    "ItemRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -10,10 +10,12 @@ import java.util.List;
 
 public abstract class Module {
     public enum Category {
+        COMBAT("Combat", "C"),
         RENDER("Render", "R"),
+        VISUALS("Visuals", "V"),
+        MOVEMENT("Movement", "M"),
         WORLD("World", "W"),
-        HUD("HUD", "H"),
-        COMBAT("Combat", "C");
+        HUD("HUD", "H");
 
         public final String label, glyph;
 

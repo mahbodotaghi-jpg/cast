@@ -6,14 +6,15 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-/** Applies a local-only easing curve to the first-person hand/item swing. */
+/** Applies the selected visual curve at the swing-transform method itself. */
 @Mixin(HeldItemRenderer.class)
 public abstract class HeldItemRendererMixin {
     @ModifyVariable(
-            method = "renderFirstPersonItem",
+            method = "applySwingOffset",
             at = @At("HEAD"),
             argsOnly = true,
-            ordinal = 2
+            ordinal = 0,
+            require = 0
     )
     private float nitro$customSwingProgress(float vanillaProgress) {
         return CustomAnimation.mapSwingProgress(vanillaProgress);

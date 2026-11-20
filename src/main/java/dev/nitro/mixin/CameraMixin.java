@@ -1,6 +1,7 @@
 package dev.nitro.mixin;
 
 import dev.nitro.modules.Freecam;
+import dev.nitro.modules.FreeLook;
 import net.minecraft.client.render.Camera;
 import net.minecraft.entity.Entity;
 import net.minecraft.world.BlockView;
@@ -22,10 +23,14 @@ public abstract class CameraMixin {
     @Inject(method = "update", at = @At("RETURN"))
     private void nitro$freecamPose(BlockView area, Entity focusedEntity, boolean thirdPerson, boolean inverseView,
                                    float tickDelta, CallbackInfo ci) {
-        if (!Freecam.active()) return;
-        Freecam f = Freecam.INSTANCE;
-        setPos(f.x(tickDelta), f.y(tickDelta), f.z(tickDelta));
-        setRotation(f.yaw, f.pitch);
+        if (Freecam.active()) {
+            Freecam f = Freecam.INSTANCE;
+            setPos(f.x(tickDelta), f.y(tickDelta), f.z(tickDelta));
+            setRotation(f.yaw, f.pitch);
+        } else if (FreeLook.active()) {
+            FreeLook f = FreeLook.INSTANCE;
+            setRotation(f.yaw, f.pitch);
+        }
     }
 
     /** Makes the vanilla renderer draw the player model (and hide the first-person hand) while in freecam. */

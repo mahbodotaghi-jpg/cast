@@ -174,9 +174,10 @@ public final class ClickGui extends Screen {
         return switch (c) {
             case COMBAT -> Items.DIAMOND_SWORD;
             case RENDER -> Items.ENDER_EYE;
+            case VISUALS -> Items.AMETHYST_SHARD;
+            case MOVEMENT -> Items.FEATHER;
             case WORLD -> Items.GRASS_BLOCK;
             case HUD -> Items.COMPASS;
-            default -> Items.BOOK;
         };
     }
 
@@ -228,16 +229,32 @@ public final class ClickGui extends Screen {
             out.add(p);
             return out;
         }
-        // Each sidebar category is its own full-width section. Search remains global.
-        for (Module.Category c : orderedCats()) {
-            if (!c.label.equals(sideSel)) continue;
-            List<Module> l = new ArrayList<>();
-            for (Module m : ModuleManager.INSTANCE.modules) if (m.category == c) l.add(m);
-            Panel p = new Panel(c.label, new ItemStack(iconOf(c)), l);
-            p.col = -1;
-            p.y = 0;
-            p.h = panelH(p.mods.size());
-            out.add(p);
+        // 67-inspired layout modes: Panel groups every category in a two-column window;
+        // Dropdown focuses the selected category as one full-width section.
+        if (Theme.GUI_LAYOUT.value == Theme.GuiLayout.PANEL) {
+            int[] colHeights = {0, 0};
+            for (Module.Category c : orderedCats()) {
+                List<Module> l = new ArrayList<>();
+                for (Module m : ModuleManager.INSTANCE.modules) if (m.category == c) l.add(m);
+                int col = colHeights[0] <= colHeights[1] ? 0 : 1;
+                Panel p = new Panel(c.label, new ItemStack(iconOf(c)), l);
+                p.col = col;
+                p.y = colHeights[col];
+                p.h = panelH(p.mods.size());
+                colHeights[col] += p.h + PGAP;
+                out.add(p);
+            }
+        } else {
+            for (Module.Category c : orderedCats()) {
+                if (!c.label.equals(sideSel)) continue;
+                List<Module> l = new ArrayList<>();
+                for (Module m : ModuleManager.INSTANCE.modules) if (m.category == c) l.add(m);
+                Panel p = new Panel(c.label, new ItemStack(iconOf(c)), l);
+                p.col = -1;
+                p.y = 0;
+                p.h = panelH(p.mods.size());
+                out.add(p);
+            }
         }
         return out;
     }
