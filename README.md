@@ -158,3 +158,13 @@ The visual effects are client-side. This archive is source code; build it with t
 ## Custom Accessories (client-only)
 
 Enable **Visuals → Custom Accessories**, choose Galaxy / Rainbow / Aurora / Gold, and keep **Show shimmer on tools** enabled. The client adds a cosmetic shimmer to swords, pickaxes, axes, shovels, hoes, the mace and trident, including tools without enchantments. It only changes local rendering; it does not edit ItemStack components, NBT, inventory contents, or network packets. The vanilla tool texture remains visible underneath the coloured shimmer.
+
+
+## Custom Accessories: Galaxy Tools
+
+The Custom Accessories module controls a built-in client-only resource pack named **NITRO Galaxy Tools**. When the module is enabled, the resource pack is activated and Minecraft reloads local resources; when disabled, the pack is removed. It replaces the vanilla textures for wooden, stone, iron, golden, diamond and netherite pickaxes, axes, shovels and hoes. The Diamond Pickaxe texture is based on the user's supplied galaxy-pickaxe reference. This is visual-only: it does not alter item stacks, NBT, durability, attributes, inventory contents or network traffic.
+
+
+## Custom Accessories: Galaxy Tools
+
+The Custom Accessories module controls a built-in client-only resource pack named **NITRO Galaxy Tools**. When the module is enabled, the resource pack is activated and Minecraft reloads local resources; when disabled, the pack is removed. It replaces the vanilla textures for wooden, stone, iron, golden, diamond and netherite pickaxes, axes, shovels and hoes. The Diamond Pickaxe texture is based on the user's supplied galaxy-pickaxe reference. This is visual-only: it does not alter item stacks, NBT, durability, attributes, inventory contents or network traffic.

@@ -2,10 +2,11 @@ package dev.nitro.modules;
 
 import dev.nitro.module.Module;
 import dev.nitro.settings.Setting;
+import dev.nitro.util.GalaxyToolPack;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
 
-/** Client-only decorative finish for tools. It never changes item data or server state. */
+/** Client-only cosmetic tool texture pack and optional local shimmer. No stack data or network packets are changed. */
 public final class CustomAccessories extends Module {
     public enum Finish {
         GALAXY("Galaxy"), RAINBOW("Rainbow"), AURORA("Aurora"), GOLD("Gold");
@@ -15,24 +16,26 @@ public final class CustomAccessories extends Module {
     }
 
     public static CustomAccessories INSTANCE;
-    private final Setting.Choice<Finish> finish = new Setting.Choice<>("Tool finish", Finish.GALAXY, Finish.class);
-    private final Setting.Num speed = new Setting.Num("Animation speed", 1.0, 0.1, 4.0, 0.1);
-    private final Setting.Bool enchantTools = new Setting.Bool("Show shimmer on tools", true);
+    private final Setting.Choice<Finish> finish = new Setting.Choice<>("Glint finish", Finish.GALAXY, Finish.class);
+    private final Setting.Num speed = new Setting.Num("Glint speed", 1.0, 0.1, 4.0, 0.1);
+    private final Setting.Bool enchantTools = new Setting.Bool("Show shimmer on tools", false);
 
     public CustomAccessories() {
-        super("Custom Accessories", "Adds a local-only animated Galaxy, Rainbow, Aurora or Gold shimmer to supported tools. The original tool texture stays intact; no item data or packets are changed.", Category.VISUALS);
+        super("Custom Accessories", "Applies NITRO's galaxy texture to every vanilla pickaxe, axe, shovel and hoe tier locally. Does not change item data or send packets.", Category.VISUALS);
         add(finish, speed, enchantTools);
         INSTANCE = this;
     }
+
+    @Override public void onEnable() { GalaxyToolPack.setEnabled(true); }
+    @Override public void onDisable() { GalaxyToolPack.setEnabled(false); }
+    @Override public void onTick() { GalaxyToolPack.setEnabled(enabled); }
 
     public static boolean active() { return INSTANCE != null && INSTANCE.enabled; }
 
     public static boolean isTool(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return false;
         String id = Registries.ITEM.getId(stack.getItem()).getPath();
-        return id.endsWith("_sword") || id.endsWith("_pickaxe") || id.endsWith("_axe")
-                || id.endsWith("_shovel") || id.endsWith("_hoe") || id.equals("mace")
-                || id.equals("trident");
+        return id.endsWith("_pickaxe") || id.endsWith("_axe") || id.endsWith("_shovel") || id.endsWith("_hoe");
     }
 
     public static boolean shouldGiveGlint(ItemStack stack) {

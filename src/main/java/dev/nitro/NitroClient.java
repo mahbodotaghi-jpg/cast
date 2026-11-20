@@ -2,6 +2,8 @@ package dev.nitro;
 
 import dev.nitro.gui.ClickGui;
 import dev.nitro.module.ModuleManager;
+import dev.nitro.util.GalaxyToolPack;
+import dev.nitro.util.GalaxyToolPack;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -17,6 +19,7 @@ public class NitroClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        GalaxyToolPack.register();
         ModuleManager.INSTANCE.init();
 
         openGui = KeyBindingHelper.registerKeyBinding(
