@@ -72,4 +72,17 @@ public abstract class Module {
     public void renderSkyLate(WorldRenderContext ctx) {}
 
     public void renderHud(DrawContext ctx) {}
+
+    /** True for HUD panels that can be dragged around in the HUD editor. */
+    public boolean movable() {
+        return false;
+    }
+
+    /** Where the HUD panel is (or would be) on screen: {x, y, width, height} in scaled GUI pixels. */
+    public int[] hudBounds(int screenW, int screenH) {
+        return new int[]{0, 0, 0, 0};
+    }
+
+    /** Moves the HUD panel so its top-left corner lands on (x, y). */
+    public void hudMoveTo(int x, int y, int screenW, int screenH) {}
 }

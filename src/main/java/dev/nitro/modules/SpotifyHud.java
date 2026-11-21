@@ -2,6 +2,7 @@ package dev.nitro.modules;
 
 import dev.nitro.module.Module;
 import dev.nitro.settings.Setting;
+import dev.nitro.util.Anchor;
 import dev.nitro.util.ColorUtil;
 import dev.nitro.util.Gfx;
 import dev.nitro.util.Lyrics;
@@ -34,13 +35,6 @@ import java.util.List;
  * drawn as big text in the sky. Reads the local Spotify app via {@link NowPlaying}; no login needed.
  */
 public final class SpotifyHud extends Module {
-    public enum Pos {
-        TOP_LEFT("Top left"), TOP_RIGHT("Top right"), BOTTOM_LEFT("Bottom left"), BOTTOM_RIGHT("Bottom right");
-        private final String label;
-        Pos(String l) { label = l; }
-        @Override public String toString() { return label; }
-    }
-
     public enum SkyMode {
         FIXED("Fixed spot"), ORBIT("Slow orbit"), FOLLOW("Drift after view");
         private final String label;
@@ -59,7 +53,10 @@ public final class SpotifyHud extends Module {
 
     // HUD card
     private final Setting.Bool showHud = new Setting.Bool("HUD card", true);
-    private final Setting.Choice<Pos> pos = new Setting.Choice<>("Position", Pos.BOTTOM_LEFT, Pos.class);
+    private final Setting.Choice<Anchor> pos = new Setting.Choice<>("Position", Anchor.BOTTOM_LEFT, Anchor.class);
+    private final Setting.Num offX = new Setting.Num("X offset", 8, 0, 1200, 1);
+    private final Setting.Num offY = new Setting.Num("Y offset", 8, 0, 700, 1);
+    private int hudH = 60;
     private final Setting.Choice<Gfx.PanelStyle> style = new Setting.Choice<>("Style", Gfx.PanelStyle.GLASS, Gfx.PanelStyle.class);
     private final Setting.Num width = new Setting.Num("Width", 200, 150, 300, 5);
     private final Setting.Bool compact = new Setting.Bool("Compact", false);
@@ -114,7 +111,7 @@ public final class SpotifyHud extends Module {
 
     public SpotifyHud() {
         super("Spotify HUD", "Now-playing card and song title in the sky.", Category.HUD);
-        add(showHud, pos, style, width, compact, showArt, artSize, showAlbum, showProgress, equalizer, artColour, hideIdle,
+        add(showHud, pos, offX, offY, style, width, compact, showArt, artSize, showAlbum, showProgress, equalizer, artColour, hideIdle,
                 hidePaused, poll, tint, opacity, accent);
         add(sky, skyMode, skyHeight, skyOrbit, skyDist, skySize, skyColor, skyCustom, skyProgress, skyDepth);
         add(lyrics, lyricSize, lyricGap, lyricContext, lyricFloat, lyricOffset);
@@ -126,6 +123,8 @@ public final class SpotifyHud extends Module {
         artSize.showIf(showArt::on);
         showAlbum.showIf(() -> !compact.on());
         pos.showIf(showHud::on);
+        offX.showIf(showHud::on);
+        offY.showIf(showHud::on);
         skyOrbit.showIf(() -> skyMode.value == SkyMode.ORBIT);
         skyCustom.showIf(() -> skyColor.value == SkyColor.CUSTOM);
     }
@@ -287,11 +286,10 @@ public final class SpotifyHud extends Module {
         int textH = lines * 11 + (prog ? (cmp ? 7 : 15) : 0);
         int H = Math.max(art, textH) + 16;
 
-        int sw = ctx.getScaledWindowWidth(), sh = ctx.getScaledWindowHeight(), margin = 8;
-        boolean right = pos.value == Pos.TOP_RIGHT || pos.value == Pos.BOTTOM_RIGHT;
-        boolean top = pos.value == Pos.TOP_LEFT || pos.value == Pos.TOP_RIGHT;
-        int x = right ? sw - W - margin : margin;
-        int y = top ? margin : sh - H - margin;
+        hudH = H;
+        int sw = ctx.getScaledWindowWidth(), sh = ctx.getScaledWindowHeight();
+        int x = pos.value.x(sw, W, offX.i());
+        int y = pos.value.y(sh, H, offY.i());
 
         int cur = curAccent;
         int tintMix = artColour.on() && haveArt ? ColorUtil.lerp(tint.rgb(), cur, 0.2f) : tint.rgb();
@@ -517,5 +515,21 @@ public final class SpotifyHud extends Module {
             lyricLine(ms, tr, vc, layer, coloured(ls.get(idx).text, time, true), sway, base + bob + rise,
                     1.15f * sz, Gfx.mulA(0xFFFFFFFF, Math.max(0.05f, la)));
         }
+    }
+
+    @Override
+    public boolean movable() {
+        return true;
+    }
+
+    @Override
+    public int[] hudBounds(int sw, int sh) {
+        int w = width.i(), h = hudH;
+        return new int[]{pos.value.x(sw, w, offX.i()), pos.value.y(sh, h, offY.i()), w, h};
+    }
+
+    @Override
+    public void hudMoveTo(int x, int y, int sw, int sh) {
+        Anchor.place(pos, offX, offY, x, y, width.i(), hudH, sw, sh);
     }
 }

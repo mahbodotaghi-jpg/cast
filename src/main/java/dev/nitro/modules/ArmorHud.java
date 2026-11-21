@@ -27,8 +27,8 @@ public final class ArmorHud extends Module {
     private final Setting.Bool hands = new Setting.Bool("Show held items", false);
     private final Setting.Bool percent = new Setting.Bool("Durability %", true);
     private final Setting.Num scale = new Setting.Num("Scale", 1.0, 0.6, 2.0, 0.05);
-    private final Setting.Num offX = new Setting.Num("X offset", 8, 0, 400, 1);
-    private final Setting.Num offY = new Setting.Num("Y offset", 56, 0, 300, 1);
+    private final Setting.Num offX = new Setting.Num("X offset", 8, 0, 1200, 1);
+    private final Setting.Num offY = new Setting.Num("Y offset", 56, 0, 700, 1);
 
     public ArmorHud() {
         super("Armor HUD", "Shows your armor with durability, optionally your held items too.", Category.HUD);
@@ -52,10 +52,10 @@ public final class ArmorHud extends Module {
         TextRenderer tr = mc.textRenderer;
         boolean horiz = layout.value == Layout.HORIZONTAL;
         boolean pct = percent.on();
-        int cellW = horiz ? 22 : (pct ? 16 + 4 + tr.getWidth("100%") : 16);
-        int cellH = horiz ? (pct ? 16 + 11 : 16) : 19;
-        int w = horiz ? cellW * items.size() : cellW;
-        int h = horiz ? cellH : cellH * items.size();
+        int[] d = dims(items.size());
+        int cellW = d[2], cellH = d[3];
+        int w = d[0];
+        int h = d[1];
 
         float sc = scale.f();
         int x = anchor.value.x(ctx.getScaledWindowWidth(), (int) (w * sc), offX.i());
@@ -80,5 +80,45 @@ public final class ArmorHud extends Module {
             }
         }
         ms.pop();
+    }
+
+    /** {total width, total height, cell width, cell height} for a given number of shown items (unscaled). */
+    private int[] dims(int n) {
+        boolean horiz = layout.value == Layout.HORIZONTAL;
+        boolean pct = percent.on();
+        int cellW = horiz ? 22 : (pct ? 16 + 4 + mc.textRenderer.getWidth("100%") : 16);
+        int cellH = horiz ? (pct ? 16 + 11 : 16) : 19;
+        return new int[]{horiz ? cellW * n : cellW, horiz ? cellH : cellH * n, cellW, cellH};
+    }
+
+    private int previewCount() {
+        int n = 0;
+        if (mc.player != null) {
+            for (EquipmentSlot s : EquipmentSlot.values()) {
+                boolean armorSlot = s == EquipmentSlot.HEAD || s == EquipmentSlot.CHEST || s == EquipmentSlot.LEGS || s == EquipmentSlot.FEET;
+                boolean wanted = armorSlot || (hands.on() && (s == EquipmentSlot.MAINHAND || s == EquipmentSlot.OFFHAND));
+                if (wanted && !mc.player.getEquippedStack(s).isEmpty()) n++;
+            }
+        }
+        return n > 0 ? n : (hands.on() ? 6 : 4);
+    }
+
+    @Override
+    public boolean movable() {
+        return true;
+    }
+
+    @Override
+    public int[] hudBounds(int sw, int sh) {
+        int[] d = dims(previewCount());
+        float sc = scale.f();
+        int w = (int) (d[0] * sc), h = (int) (d[1] * sc);
+        return new int[]{anchor.value.x(sw, w, offX.i()), anchor.value.y(sh, h, offY.i()), w, h};
+    }
+
+    @Override
+    public void hudMoveTo(int x, int y, int sw, int sh) {
+        int[] b = hudBounds(sw, sh);
+        Anchor.place(anchor, offX, offY, x, y, b[2], b[3], sw, sh);
     }
 }

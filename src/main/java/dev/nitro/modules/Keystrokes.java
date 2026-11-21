@@ -19,8 +19,8 @@ public final class Keystrokes extends Module {
     private final Setting.Bool mouse = new Setting.Bool("Mouse buttons + CPS", true);
     private final Setting.Choice<Anchor> anchor = new Setting.Choice<>("Position", Anchor.BOTTOM_LEFT, Anchor.class);
     private final Setting.Num scale = new Setting.Num("Scale", 1.0, 0.6, 2.0, 0.05);
-    private final Setting.Num offX = new Setting.Num("X offset", 8, 0, 300, 1);
-    private final Setting.Num offY = new Setting.Num("Y offset", 40, 0, 300, 1);
+    private final Setting.Num offX = new Setting.Num("X offset", 8, 0, 1200, 1);
+    private final Setting.Num offY = new Setting.Num("Y offset", 40, 0, 700, 1);
     private final Setting.Color tint = new Setting.Color("Key colour", 0x20242C);
     private final Setting.Num opacity = new Setting.Num("Key opacity", 60, 20, 95, 5);
     private final Setting.Color pressed = new Setting.Color("Pressed colour", 0x6EA8FF);
@@ -64,10 +64,8 @@ public final class Keystrokes extends Module {
         prune(rmb, now);
 
         int k = 22, g = 2;
-        int w = k * 3 + g * 2;
-        int h = k * 2 + g;
-        if (space.on()) h += g + 14;
-        if (mouse.on()) h += g + 26;
+        int w = dims()[0];
+        int h = dims()[1];
 
         float sc = scale.f();
         int x = anchor.value.x(ctx.getScaledWindowWidth(), (int) (w * sc), offX.i());
@@ -109,5 +107,34 @@ public final class Keystrokes extends Module {
         ctx.drawText(tr, name, x + (w - tr.getWidth(name)) / 2, y + 4, col, false);
         String c = cps + " CPS";
         Gfx.text(ctx, tr, c, x + (w - tr.getWidth(c) * 0.8f) / 2f, y + 15, 0.8f, dim, false);
+    }
+
+    /** {width, height} of the whole panel, unscaled. */
+    private int[] dims() {
+        int k = 22, g = 2;
+        int w = k * 3 + g * 2;
+        int h = k * 2 + g;
+        if (space.on()) h += g + 14;
+        if (mouse.on()) h += g + 26;
+        return new int[]{w, h};
+    }
+
+    @Override
+    public boolean movable() {
+        return true;
+    }
+
+    @Override
+    public int[] hudBounds(int sw, int sh) {
+        int[] d = dims();
+        float sc = scale.f();
+        int w = (int) (d[0] * sc), h = (int) (d[1] * sc);
+        return new int[]{anchor.value.x(sw, w, offX.i()), anchor.value.y(sh, h, offY.i()), w, h};
+    }
+
+    @Override
+    public void hudMoveTo(int x, int y, int sw, int sh) {
+        int[] b = hudBounds(sw, sh);
+        Anchor.place(anchor, offX, offY, x, y, b[2], b[3], sw, sh);
     }
 }

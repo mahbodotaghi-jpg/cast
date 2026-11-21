@@ -33,8 +33,8 @@ public final class TargetHud extends Module {
     private final Setting.Bool armor = new Setting.Bool("Show armor & items", true);
     private final Setting.Bool distance = new Setting.Bool("Show distance & armor value", true);
     private final Setting.Bool winLose = new Setting.Bool("Win / lose tag", true);
-    private final Setting.Num offX = new Setting.Num("X offset", 24, -400, 400, 1);
-    private final Setting.Num offY = new Setting.Num("Y offset", 24, -300, 300, 1);
+    private final Setting.Num offX = new Setting.Num("X offset", 24, -1200, 1200, 1);
+    private final Setting.Num offY = new Setting.Num("Y offset", 24, -700, 700, 1);
     private final Setting.Color tint = new Setting.Color("Panel tint", 0x20242C);
     private final Setting.Num opacity = new Setting.Num("Panel opacity", 65, 20, 95, 5);
     private final Setting.Color accent = new Setting.Color("Accent", 0x6EA8FF);
@@ -230,5 +230,30 @@ public final class TargetHud extends Module {
             }
         }
         ms.pop();
+    }
+
+    @Override
+    public boolean movable() {
+        return true;
+    }
+
+    @Override
+    public int[] hudBounds(int sw, int sh) {
+        int w0 = 172, h0 = 46 + (armor.on() ? 26 : 0);
+        float sc = scale.f();
+        int w = (int) (w0 * sc), h = (int) (h0 * sc);
+        // The card is scaled around its centre, so its drawn top-left sits inside the unscaled box.
+        int x = Math.round(sw / 2f + offX.i() + (w0 - w) / 2f);
+        int y = Math.round(sh / 2f + offY.i() + (h0 - h) / 2f);
+        return new int[]{x, y, w, h};
+    }
+
+    @Override
+    public void hudMoveTo(int x, int y, int sw, int sh) {
+        int w0 = 172, h0 = 46 + (armor.on() ? 26 : 0);
+        float sc = scale.f();
+        float w = w0 * sc, h = h0 * sc;
+        offX.set(x - (w0 - w) / 2f - sw / 2f);
+        offY.set(y - (h0 - h) / 2f - sh / 2f);
     }
 }

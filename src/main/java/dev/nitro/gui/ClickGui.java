@@ -6,10 +6,8 @@ import dev.nitro.module.ModuleManager;
 import dev.nitro.settings.Setting;
 import dev.nitro.util.ColorUtil;
 import dev.nitro.util.Gfx;
-import dev.nitro.util.NitroSounds;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.util.InputUtil;
@@ -45,7 +43,6 @@ public final class ClickGui extends Screen {
     private boolean minimized;
     private Module selected;
     private Module hoverModule;
-    private Module hoverSoundModule;
     private int listScroll, setScroll;
     private float scroll;
     private int scrollTarget;
@@ -63,8 +60,6 @@ public final class ClickGui extends Screen {
     private final long openedAt = System.nanoTime();
     private long lastFrame = openedAt;
     private float time, dt, alpha, slide, guiScale = 1f, tabY = -1;
-    private Module lastHoverSoundModule;
-    private long lastHoverSoundNanos;
 
     private int wx, wy, ww, wh;
 
@@ -121,7 +116,7 @@ public final class ClickGui extends Screen {
     private int closeX() { return wx + ww - 12 - 18; }
     private int minX() { return closeX() - 22; }
     private int searchX() { return minX() - 10 - 150; }
-    private int bottomY(int k) { return bot() - 2 * 24 - 2 + k * 24; }
+    private int bottomY(int k) { return bot() - 3 * 24 - 2 + k * 24; }
 
     // ------------------------------------------------------------ colour helpers
 
@@ -329,7 +324,7 @@ public final class ClickGui extends Screen {
                 y += h + GAP;
             }
         } else if (page == Page.SETTINGS) {
-            Setting<?>[] uiSettings = {Theme.ANIMATED, Theme.HOVER_SOUND, Theme.HOVER_VOLUME};
+            Setting<?>[] uiSettings = {Theme.ANIMATED};
             for (Setting<?> setting : uiSettings) {
                 if (!setting.visible.getAsBoolean()) continue;
                 int h = rowHeight(setting);
@@ -389,7 +384,6 @@ public final class ClickGui extends Screen {
         dt = Math.min(0.1f, (now - lastFrame) / 1e9f);
         lastFrame = now;
         hoverModule = null;
-        hoverSoundModule = null;
 
         // Keep the dimmed backdrop fixed while the NITRO window fades and scales into place.
         ctx.fillGradient(0, 0, width, height, A(Theme.backTop()), A(Theme.backBot()));
@@ -423,31 +417,10 @@ public final class ClickGui extends Screen {
         }
         matrices.pop();
 
-        updateHoverSound();
         if (hoverModule != null && page == Page.MODULES && !hoverModule.description.isEmpty()) {
             List<OrderedText> tip = textRenderer.wrapLines(Text.literal(hoverModule.description), 200);
             ctx.drawOrderedTooltip(textRenderer, tip, mx, my);
         }
-    }
-
-    /** Plays one quiet, soft UI sound when the pointer enters a new module row. */
-    private void updateHoverSound() {
-        Module current = page == Page.MODULES ? hoverSoundModule : null;
-        if (current == lastHoverSoundModule) return;
-
-        lastHoverSoundModule = current;
-        if (current == null || !Theme.HOVER_SOUND.on()) return;
-
-        long now = System.nanoTime();
-        // Avoid a rapid series of sounds when flicking across several adjacent rows.
-        if (now - lastHoverSoundNanos < 65_000_000L) return;
-        lastHoverSoundNanos = now;
-
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.getSoundManager() == null) return;
-        float volume = Math.max(0f, Math.min(1f, Theme.HOVER_VOLUME.f()));
-        if (volume <= 0.001f) return;
-        client.getSoundManager().play(PositionedSoundInstance.master(NitroSounds.GUI_HOVER, 1.0f, volume));
     }
 
     private void drawHeader(DrawContext ctx, int mx, int my) {
@@ -505,11 +478,11 @@ public final class ClickGui extends Screen {
             text(ctx, labels.get(i), tx + 30, ty + 9, A(sel ? 0xFFFFFFFF : hover ? Theme.soft() : Theme.dim()));
         }
 
-        // bottom group: Settings / Themes
+        // bottom group: Settings / Themes / HUD editor
         ctx.fill(tx, bottomY(0) - 5, tx + tw, bottomY(0) - 4, A(0x1EFFFFFF));
-        String[] names = {"Settings", "Themes"};
-        Item[] icons = {Items.COMPARATOR, Items.PAINTING};
-        for (int k = 0; k < 2; k++) {
+        String[] names = {"Settings", "Themes", "HUD Editor"};
+        Item[] icons = {Items.COMPARATOR, Items.PAINTING, Items.ITEM_FRAME};
+        for (int k = 0; k < 3; k++) {
             int by = bottomY(k);
             boolean active = (k == 0 && page == Page.SETTINGS) || (k == 1 && page == Page.THEMES);
             boolean hover = mx >= tx && mx < tx + tw && my >= by && my < by + 22;
@@ -553,7 +526,6 @@ public final class ClickGui extends Screen {
                 text(ctx, m.name, px + 12, ry + 7, A(Gfx.lerpArgb(Theme.soft(), 0xFFFFFFFF, on)));
                 sw(ctx, px + pw - 38, ry + 3, m, m.enabled);
                 if (hover) {
-                    hoverSoundModule = m;
                     if (mx < px + pw - 44) hoverModule = m;
                 }
             }
@@ -875,10 +847,15 @@ public final class ClickGui extends Screen {
                     return true;
                 }
             }
-            for (int k = 0; k < 2; k++) {
+            for (int k = 0; k < 3; k++) {
                 int by = bottomY(k);
                 if (my >= by && my < by + 22) {
-                    openPage(k == 0 ? Page.SETTINGS : Page.THEMES);
+                    if (k == 2) {
+                        Config.save();
+                        client.setScreen(new HudEditor(this));
+                    } else {
+                        openPage(k == 0 ? Page.SETTINGS : Page.THEMES);
+                    }
                     return true;
                 }
             }

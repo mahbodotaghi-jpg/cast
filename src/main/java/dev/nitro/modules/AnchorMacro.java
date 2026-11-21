@@ -12,9 +12,13 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 
 /**
- * Anchor Macro: while you look at a respawn anchor (and hold right click, if that option is on) it swaps to glowstone,
- * charges the anchor, swaps to your hotbar totem slot and detonates it, one step per delay. Only works where anchors
- * explode (Overworld / End).
+ * Anchor Macro. Look at a respawn anchor and (optionally) hold right click:
+ * <ol>
+ *   <li>CHARGE - while the anchor has fewer charges than you asked for, it switches to glowstone and right clicks.</li>
+ *   <li>EXPLODE - once it has enough charges, it switches to your totem slot and right clicks to detonate it.</li>
+ * </ol>
+ * Every step reads the anchor's real charge level from the world, so lag or a missed click just repeats the step
+ * instead of getting the macro out of sync. Anchors only explode outside the Nether, so it does nothing there.
  */
 public final class AnchorMacro extends Module {
     private final Setting.Num charges = new Setting.Num("Charges before explode", 1, 1, 4, 1);
@@ -25,7 +29,10 @@ public final class AnchorMacro extends Module {
     private final Setting.Bool needTotem = new Setting.Bool("Require offhand totem", true);
     private final Setting.Bool swapBack = new Setting.Bool("Switch back after explode", false);
 
-    private int timer, backSlot = -1;
+    /** Ticks left until the next step is allowed. */
+    private int cooldown;
+    /** Hotbar slot you were holding before the macro touched your hotbar, or -1 when it has not changed anything. */
+    private int originalSlot = -1;
 
     public AnchorMacro() {
         super("Anchor Macro", "Charges the anchor you look at and ignites it with your hotbar totem.", Category.COMBAT);
@@ -35,49 +42,76 @@ public final class AnchorMacro extends Module {
 
     @Override
     public void onEnable() {
-        timer = 0;
-        backSlot = -1;
+        cooldown = 0;
+        originalSlot = -1;
+    }
+
+    @Override
+    public void onDisable() {
+        finish();
+    }
+
+    @Override
+    public void onWorldChanged() {
+        cooldown = 0;
+        originalSlot = -1;
     }
 
     @Override
     public void onTick() {
         if (mc.player == null || mc.world == null || mc.interactionManager == null) return;
-        if (timer > 0) {
-            timer--;
+        if (cooldown > 0) cooldown--;
+
+        BlockHitResult hit = targetAnchor();
+        if (hit == null || !conditionsMet()) {
+            finish(); // looked away / let go / anchor gone: put the hotbar back if asked to
             return;
         }
-        if (mc.currentScreen != null) return;
-        if (mc.world.getDimension().respawnAnchorWorks()) return; // Nether: anchors do not explode
-        if (!(mc.crosshairTarget instanceof BlockHitResult hit) || hit.getType() != HitResult.Type.BLOCK) return;
+        if (cooldown > 0) return;
 
-        BlockState st = mc.world.getBlockState(hit.getBlockPos());
-        if (!st.isOf(Blocks.RESPAWN_ANCHOR)) return;
-        if (needUse.on() && !mc.options.useKey.isPressed()) return;
-        if (needTotem.on() && !mc.player.getOffHandStack().isOf(Items.TOTEM_OF_UNDYING)) return;
+        BlockState state = mc.world.getBlockState(hit.getBlockPos());
+        int have = state.get(RespawnAnchorBlock.CHARGES);
 
-        int have = st.get(RespawnAnchorBlock.CHARGES);
-        if (have < charges.i()) {
-            int g = CombatUtil.findHotbar(Items.GLOWSTONE);
-            if (g < 0) return;
-            if (backSlot < 0) backSlot = mc.player.getInventory().selectedSlot;
-            CombatUtil.selectHotbar(g);
-        } else {
-            // ignite with the totem: the totem slot you set (or the first totem found in the hotbar)
-            int slot = explodeSlot.i() - 1;
-            if (autoTotem.on()) {
-                int found = CombatUtil.findHotbar(Items.TOTEM_OF_UNDYING);
-                if (found >= 0) slot = found;
-            }
-            CombatUtil.selectHotbar(slot);
-        }
+        boolean exploding = have >= charges.i();
+        int slot = exploding ? explodeHotbarSlot() : CombatUtil.findHotbar(Items.GLOWSTONE);
+        if (slot < 0) return;                                              // nothing to charge with
+        if (exploding && mc.player.getInventory().getStack(slot).isOf(Items.GLOWSTONE)) return; // would not explode it
+
+        if (originalSlot < 0) originalSlot = mc.player.getInventory().selectedSlot;
+        CombatUtil.selectHotbar(slot);
 
         if (mc.interactionManager.interactBlock(mc.player, Hand.MAIN_HAND, hit).isAccepted()) {
             mc.player.swingHand(Hand.MAIN_HAND);
         }
-        if (have >= charges.i() && swapBack.on() && backSlot >= 0) {
-            CombatUtil.selectHotbar(backSlot);
-            backSlot = -1;
+        if (exploding) finish();
+        cooldown = delay.i();
+    }
+
+    /** The anchor under the crosshair, or null when you are not looking at one (or the macro must not run here). */
+    private BlockHitResult targetAnchor() {
+        if (mc.currentScreen != null) return null;
+        if (mc.world.getDimension().respawnAnchorWorks()) return null; // Nether: anchors do not explode
+        if (!(mc.crosshairTarget instanceof BlockHitResult hit) || hit.getType() != HitResult.Type.BLOCK) return null;
+        return mc.world.getBlockState(hit.getBlockPos()).isOf(Blocks.RESPAWN_ANCHOR) ? hit : null;
+    }
+
+    private boolean conditionsMet() {
+        if (needUse.on() && !mc.options.useKey.isPressed()) return false;
+        return !needTotem.on() || mc.player.getOffHandStack().isOf(Items.TOTEM_OF_UNDYING);
+    }
+
+    /** Hotbar slot used to detonate: the first totem in the hotbar (auto) or the slot set in the settings. */
+    private int explodeHotbarSlot() {
+        if (autoTotem.on()) {
+            int found = CombatUtil.findHotbar(Items.TOTEM_OF_UNDYING);
+            if (found >= 0) return found;
         }
-        timer = delay.i();
+        return explodeSlot.i() - 1;
+    }
+
+    /** Ends the current sequence; switches back to the slot you started on when that option is on. */
+    private void finish() {
+        if (swapBack.on() && originalSlot >= 0 && mc.player != null) CombatUtil.selectHotbar(originalSlot);
+        originalSlot = -1;
     }
 }

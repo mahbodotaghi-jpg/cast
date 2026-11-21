@@ -48,18 +48,15 @@ public final class Theme {
 
     public static final Setting.Choice<Preset> PRESET = new Setting.Choice<>("Preset", Preset.VIOLET, Preset.class);
     public static final Setting.Bool ANIMATED = new Setting.Bool("Animated accent", true);
-    public static final Setting.Bool HOVER_SOUND = new Setting.Bool("Module hover sound", true);
-    public static final Setting.Num HOVER_VOLUME = new Setting.Num("Hover sound volume", 0.35, 0.0, 1.0, 0.05);
     public static final Setting.Color CUSTOM_A1 = new Setting.Color("Custom accent 1", 0xFF5CAA);
     public static final Setting.Color CUSTOM_A2 = new Setting.Color("Custom accent 2", 0xFFD166);
 
-    private static final List<Setting<?>> ALL = List.<Setting<?>>of(PRESET, ANIMATED, HOVER_SOUND, HOVER_VOLUME, CUSTOM_A1, CUSTOM_A2);
+    private static final List<Setting<?>> ALL = List.<Setting<?>>of(PRESET, ANIMATED, CUSTOM_A1, CUSTOM_A2);
     private static final List<Setting<?>> SHOWN = List.<Setting<?>>of(ANIMATED, CUSTOM_A1, CUSTOM_A2);
 
     static {
         CUSTOM_A1.showIf(Theme::isCustom);
         CUSTOM_A2.showIf(Theme::isCustom);
-        HOVER_VOLUME.showIf(HOVER_SOUND::on);
     }
 
     /** Settings shown in the right-hand pane of the Themes tab. */

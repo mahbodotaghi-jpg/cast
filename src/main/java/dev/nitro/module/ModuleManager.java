@@ -11,6 +11,7 @@ import dev.nitro.modules.ElytraSwap;
 import dev.nitro.modules.FallReset;
 import dev.nitro.modules.MaceSwap;
 import dev.nitro.modules.ShieldBreaker;
+import dev.nitro.modules.StunSlam;
 import dev.nitro.modules.SmashAim;
 import dev.nitro.modules.AutoCrystal;
 import dev.nitro.modules.AutoTotem;
@@ -73,6 +74,7 @@ public final class ModuleManager {
         modules.add(new AnchorMacro());
         modules.add(new AutoInvTotem());
         modules.add(new AutoHitCrystal());
+        modules.add(new StunSlam()); // before Shield Breaker: it needs swap priority for the axe + mace combo
         modules.add(new ShieldBreaker()); // swap priority: Shield Breaker, then Mace Swap, then Breach Swap
         modules.add(new MaceSwap());
         modules.add(new BreachSwap());

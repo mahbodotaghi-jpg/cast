@@ -2,7 +2,6 @@ package dev.nitro;
 
 import dev.nitro.gui.ClickGui;
 import dev.nitro.module.ModuleManager;
-import dev.nitro.util.NitroSounds;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -19,7 +18,6 @@ public class NitroClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ModuleManager.INSTANCE.init();
-        NitroSounds.register();
 
         openGui = KeyBindingHelper.registerKeyBinding(
                 new KeyBinding("key.nitro.gui", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT, "category.nitro"));

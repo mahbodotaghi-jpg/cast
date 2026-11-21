@@ -1,3 +1,13 @@
+# NITRO – v25: HUD editor, Anchor Macro rewrite, no hover sounds
+
+- **HUD Editor** (ClickGUI sidebar, bottom): drag Target HUD, Spotify HUD, Keystrokes and Armor HUD anywhere. Snaps to the
+  screen edges / centre (hold Alt to disable), arrow keys nudge (Shift = 5px), right click toggles a panel, Esc saves.
+- **Anchor Macro** rewritten as a clean charge -> explode loop that reads the anchor's real charge level each step.
+- Module hover sound removed (code, setting, sound asset).
+- **Stun Slam** (Combat): falling onto a blocking player, your hit is made with a hotbar axe to break the shield, then
+  a few ticks later the same target gets a mace hit, and your slot comes back. Needs an axe and a mace in the hotbar.
+- Spotify HUD now has X / Y offset settings like the other HUD panels.
+
 # NITRO – Original category-panel GUI restored
 
 Fabric client mod for Minecraft 1.21.4. Contains the original NITRO ClickGUI layout with a separate panel for each category (Combat, Render, Visuals, Movement, World, and HUD), plus the current NITRO modules.
