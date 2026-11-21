@@ -8,6 +8,7 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.item.Item;
 import net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -34,6 +35,34 @@ public final class CombatUtil {
         if (mc.player.getInventory().selectedSlot == slot) return;
         mc.player.getInventory().selectedSlot = slot;
         mc.getNetworkHandler().sendPacket(new UpdateSelectedSlotC2SPacket(slot));
+    }
+
+    /**
+     * Uses the item in a hotbar slot while the use packet carries the given rotation, then puts your own view back
+     * (so your camera does not move). Returns true if the use was accepted.
+     */
+    public static boolean useSilently(int slot, float yaw, float pitch, boolean switchBack) {
+        var p = mc.player;
+        if (p == null || mc.interactionManager == null || slot < 0 || slot > 8) return false;
+        int prev = p.getInventory().selectedSlot;
+        float oy = p.getYaw(), op = p.getPitch();
+        selectHotbar(slot);
+        p.setYaw(yaw);
+        p.setPitch(pitch);
+        boolean ok = mc.interactionManager.interactItem(p, Hand.MAIN_HAND).isAccepted();
+        p.setYaw(oy);
+        p.setPitch(op);
+        if (switchBack && prev != slot) selectHotbar(prev);
+        return ok;
+    }
+
+    /** Distance from your feet straight down to the first solid block (99 if there is none within 12 blocks). */
+    public static double groundDistance() {
+        if (mc.player == null || mc.world == null) return 99;
+        Vec3d f = mc.player.getPos();
+        var r = mc.world.raycast(new RaycastContext(f, f.add(0, -12, 0),
+                RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, mc.player));
+        return r.getType() == net.minecraft.util.hit.HitResult.Type.MISS ? 99 : f.y - r.getPos().y;
     }
 
     /** Health plus absorption. */

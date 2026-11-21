@@ -1,7 +1,17 @@
 package dev.nitro.module;
 
 import dev.nitro.Config;
+import dev.nitro.util.AttackHooks;
 import dev.nitro.modules.AnchorMacro;
+import dev.nitro.modules.AutoHitCrystal;
+import dev.nitro.modules.AutoInvTotem;
+import dev.nitro.modules.AutoWindCharge;
+import dev.nitro.modules.BreachSwap;
+import dev.nitro.modules.ElytraSwap;
+import dev.nitro.modules.FallReset;
+import dev.nitro.modules.MaceSwap;
+import dev.nitro.modules.ShieldBreaker;
+import dev.nitro.modules.SmashAim;
 import dev.nitro.modules.AutoCrystal;
 import dev.nitro.modules.AutoTotem;
 import dev.nitro.modules.HoverTotem;
@@ -61,6 +71,15 @@ public final class ModuleManager {
         modules.add(new HoverTotem());
         modules.add(new AutoCrystal());
         modules.add(new AnchorMacro());
+        modules.add(new AutoInvTotem());
+        modules.add(new AutoHitCrystal());
+        modules.add(new ShieldBreaker()); // swap priority: Shield Breaker, then Mace Swap, then Breach Swap
+        modules.add(new MaceSwap());
+        modules.add(new BreachSwap());
+        modules.add(new AutoWindCharge());
+        modules.add(new SmashAim());
+        modules.add(new FallReset());
+        modules.add(new ElytraSwap());
         modules.add(new ClearWeather());
         modules.add(new MotionBlur()); // must stay before the HUD modules so their panels are drawn after the blur
         modules.add(new TargetHud());
@@ -73,9 +92,11 @@ public final class ModuleManager {
     public void tick(MinecraftClient mc) {
         if (mc.world != lastWorld) {
             lastWorld = mc.world;
+            AttackHooks.reset();
             for (Module m : modules) m.onWorldChanged();
         }
         if (mc.world == null || mc.player == null) return;
+        AttackHooks.tick();
 
         long handle = mc.getWindow().getHandle();
         for (Module m : modules) {

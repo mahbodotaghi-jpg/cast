@@ -161,3 +161,29 @@ Push this project to GitHub and let `.github/workflows/build.yml` run, or use Gr
 - Added a soft custom UI hover sound when the pointer enters a module row.
 - Added **Settings → Module hover sound** and **Hover sound volume** controls. The volume control appears only while the sound is enabled.
 - The hover effect is local to the client and does not send packets.
+
+
+## v0.1.12 - Mace and crystal PvP combat modules
+Nine new Combat modules. Swap modules share one attack hook (a mixin on `attackEntity`): the weapon is selected right
+before the attack packet and your slot is restored right after, so the server sees weapon + attack in the same tick.
+Swap priority when several are on: Shield Breaker, then Mace Swap, then Breach Swap.
+- **Mace Swap**: hits with a mace from the hotbar while you fall (min fall distance setting, or always), then switches
+  back. Uses Breach Swap's logic to pick the mace when that module is on.
+- **Breach Swap**: holding a mace, an armored target is hit with your Breach mace, an unarmored one with your Density mace
+  (any mace if the preferred one is missing).
+- **Shield Breaker**: hits a blocking target with an axe from the hotbar, then switches back.
+- **Auto Wind Charge**: give it a key. Press: silent straight-down wind charge throw (your camera does not move),
+  switch to mace, and on the way down attack the nearest player once fall distance >= "Min smash height" and they are
+  in reach. Switches itself off when the combo ends.
+- **Smash Aim**: while falling (mace in hand), snaps or smoothly turns onto the nearest player below you. Turns are
+  quantized to your mouse sensitivity.
+- **Fall Reset**: after a smash hit, wind charge mode throws a charge at your feet just before the ground; water bucket
+  mode places water just before landing and scoops it up after.
+- **Elytra Swap**: give it a key. Press: elytra on (chestplate goes to the elytra's slot). Press while wearing the
+  elytra: chestplate back on. "Re-equip chestplate on landing" swaps back by itself.
+- **Auto Hit Crystal**: Right click mode breaks the crystal your own right click placed; Left click mode places it for
+  you when you left click the obsidian/bedrock, then breaks it. Delay setting (+ optional humanizing).
+- **Auto Inv Totem**: refills offhand and a hotbar slot from inventory totems; "Only after a pop" waits for a totem to
+  be consumed; optional "inventory open only".
+Keybind modules (Auto Wind Charge, Elytra Swap) act when you press their key and then switch themselves off.
+Not compiled in my environment: if the GitHub build shows red lines, send them to me.
