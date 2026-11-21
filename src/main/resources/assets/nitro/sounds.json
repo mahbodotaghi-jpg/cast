@@ -1,0 +1,10 @@
+{
+  "gui_hover": {
+    "sounds": [
+      {
+        "name": "nitro:ui/gui_hover",
+        "stream": false
+      }
+    ]
+  }
+}

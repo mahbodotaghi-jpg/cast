@@ -6,8 +6,10 @@ import dev.nitro.module.ModuleManager;
 import dev.nitro.settings.Setting;
 import dev.nitro.util.ColorUtil;
 import dev.nitro.util.Gfx;
+import dev.nitro.util.NitroSounds;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.util.InputUtil;
@@ -43,6 +45,7 @@ public final class ClickGui extends Screen {
     private boolean minimized;
     private Module selected;
     private Module hoverModule;
+    private Module hoverSoundModule;
     private int listScroll, setScroll;
     private float scroll;
     private int scrollTarget;
@@ -59,7 +62,9 @@ public final class ClickGui extends Screen {
     private final Map<Object, Float> anim = new HashMap<>();
     private final long openedAt = System.nanoTime();
     private long lastFrame = openedAt;
-    private float time, dt, alpha, slide, tabY = -1;
+    private float time, dt, alpha, slide, guiScale = 1f, tabY = -1;
+    private Module lastHoverSoundModule;
+    private long lastHoverSoundNanos;
 
     private int wx, wy, ww, wh;
 
@@ -96,7 +101,9 @@ public final class ClickGui extends Screen {
         float p = Math.min(1f, time / 0.28f);
         float e = 1f - (1f - p) * (1f - p) * (1f - p);
         alpha = e;
-        slide = (1f - e) * 16f;
+        slide = (1f - e) * 13f;
+        // Fade + gentle scale-in gives the window a soft, polished opening transition.
+        guiScale = 0.955f + 0.045f * e;
         ww = Math.min(width - 20, 690);
         int full = Math.min(height - 20, 400);
         wh = minimized ? HEAD + 4 : full;
@@ -229,32 +236,19 @@ public final class ClickGui extends Screen {
             out.add(p);
             return out;
         }
-        // 67-inspired layout modes: Panel groups every category in a two-column window;
-        // Dropdown focuses the selected category as one full-width section.
-        if (Theme.GUI_LAYOUT.value == Theme.GuiLayout.PANEL) {
-            int[] colHeights = {0, 0};
-            for (Module.Category c : orderedCats()) {
-                List<Module> l = new ArrayList<>();
-                for (Module m : ModuleManager.INSTANCE.modules) if (m.category == c) l.add(m);
-                int col = colHeights[0] <= colHeights[1] ? 0 : 1;
-                Panel p = new Panel(c.label, new ItemStack(iconOf(c)), l);
-                p.col = col;
-                p.y = colHeights[col];
-                p.h = panelH(p.mods.size());
-                colHeights[col] += p.h + PGAP;
-                out.add(p);
-            }
-        } else {
-            for (Module.Category c : orderedCats()) {
-                if (!c.label.equals(sideSel)) continue;
-                List<Module> l = new ArrayList<>();
-                for (Module m : ModuleManager.INSTANCE.modules) if (m.category == c) l.add(m);
-                Panel p = new Panel(c.label, new ItemStack(iconOf(c)), l);
-                p.col = -1;
-                p.y = 0;
-                p.h = panelH(p.mods.size());
-                out.add(p);
-            }
+        // Keep the original NITRO panel layout: every category gets its own panel,
+        // with two independently stacked columns and a shared scroll area.
+        int[] colHeights = {0, 0};
+        for (Module.Category c : orderedCats()) {
+            List<Module> l = new ArrayList<>();
+            for (Module m : ModuleManager.INSTANCE.modules) if (m.category == c) l.add(m);
+            int col = colHeights[0] <= colHeights[1] ? 0 : 1;
+            Panel p = new Panel(c.label, new ItemStack(iconOf(c)), l);
+            p.col = col;
+            p.y = colHeights[col];
+            p.h = panelH(p.mods.size());
+            colHeights[col] += p.h + PGAP;
+            out.add(p);
         }
         return out;
     }
@@ -335,9 +329,13 @@ public final class ClickGui extends Screen {
                 y += h + GAP;
             }
         } else if (page == Page.SETTINGS) {
-            int h = rowHeight(Theme.ANIMATED);
-            rows.add(new Row(Kind.SETTING, Theme.ANIMATED, y, h));
-            y += h + GAP;
+            Setting<?>[] uiSettings = {Theme.ANIMATED, Theme.HOVER_SOUND, Theme.HOVER_VOLUME};
+            for (Setting<?> setting : uiSettings) {
+                if (!setting.visible.getAsBoolean()) continue;
+                int h = rowHeight(setting);
+                rows.add(new Row(Kind.SETTING, setting, y, h));
+                y += h + GAP;
+            }
             rows.add(new Row(Kind.DISABLE_ALL, null, y, 26));
         } else if (page == Page.MODULE && selected != null) {
             rows.add(new Row(Kind.ENABLE, null, y, 28)); y += 32;
@@ -391,33 +389,65 @@ public final class ClickGui extends Screen {
         dt = Math.min(0.1f, (now - lastFrame) / 1e9f);
         lastFrame = now;
         hoverModule = null;
+        hoverSoundModule = null;
 
+        // Keep the dimmed backdrop fixed while the NITRO window fades and scales into place.
         ctx.fillGradient(0, 0, width, height, A(Theme.backTop()), A(Theme.backBot()));
+        var matrices = ctx.getMatrices();
+        matrices.push();
+        matrices.translate(width / 2.0, height / 2.0, 0.0);
+        matrices.scale(guiScale, guiScale, 1.0f);
+        matrices.translate(-width / 2.0, -height / 2.0, 0.0);
+        // Convert the pointer back into GUI-local coordinates while the window is scaled.
+        int hitX = Math.round((mx - width / 2f) / guiScale + width / 2f);
+        int hitY = Math.round((my - height / 2f) / guiScale + height / 2f);
 
         Gfx.glow(ctx, wx, wy, ww, wh, 12, accent(0.4f), 0.32f * alpha);
         Gfx.roundGradientV(ctx, wx, wy, ww, wh, 12, A(Theme.winTop()), A(Theme.winBot()));
         Gfx.roundBorder(ctx, wx, wy, ww, wh, 12, ac(0.2f, 0.55f));
 
-        drawHeader(ctx, mx, my);
-        if (minimized) return;
+        drawHeader(ctx, hitX, hitY);
+        if (!minimized) {
+            ctx.fill(wx + 1, wy + HEAD - 1, wx + ww - 1, wy + HEAD, A(0x1EFFFFFF));
+            ctx.fill(wx + SIDE, wy + HEAD, wx + SIDE + 1, wy + wh - 8, A(0x1EFFFFFF));
+            drawSidebar(ctx, hitX, hitY);
 
-        ctx.fill(wx + 1, wy + HEAD - 1, wx + ww - 1, wy + HEAD, A(0x1EFFFFFF));
-        ctx.fill(wx + SIDE, wy + HEAD, wx + SIDE + 1, wy + wh - 8, A(0x1EFFFFFF));
-        drawSidebar(ctx, mx, my);
-
-        switch (page) {
-            case MODULES -> drawPanels(ctx, mx, my);
-            case THEMES -> {
-                drawThemeList(ctx, mx, my);
-                drawPane(ctx, mx, my);
+            switch (page) {
+                case MODULES -> drawPanels(ctx, hitX, hitY);
+                case THEMES -> {
+                    drawThemeList(ctx, hitX, hitY);
+                    drawPane(ctx, hitX, hitY);
+                }
+                default -> drawPane(ctx, hitX, hitY);
             }
-            default -> drawPane(ctx, mx, my);
         }
+        matrices.pop();
 
+        updateHoverSound();
         if (hoverModule != null && page == Page.MODULES && !hoverModule.description.isEmpty()) {
             List<OrderedText> tip = textRenderer.wrapLines(Text.literal(hoverModule.description), 200);
             ctx.drawOrderedTooltip(textRenderer, tip, mx, my);
         }
+    }
+
+    /** Plays one quiet, soft UI sound when the pointer enters a new module row. */
+    private void updateHoverSound() {
+        Module current = page == Page.MODULES ? hoverSoundModule : null;
+        if (current == lastHoverSoundModule) return;
+
+        lastHoverSoundModule = current;
+        if (current == null || !Theme.HOVER_SOUND.on()) return;
+
+        long now = System.nanoTime();
+        // Avoid a rapid series of sounds when flicking across several adjacent rows.
+        if (now - lastHoverSoundNanos < 65_000_000L) return;
+        lastHoverSoundNanos = now;
+
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.getSoundManager() == null) return;
+        float volume = Math.max(0f, Math.min(1f, Theme.HOVER_VOLUME.f()));
+        if (volume <= 0.001f) return;
+        client.getSoundManager().play(PositionedSoundInstance.master(NitroSounds.GUI_HOVER, 1.0f, volume));
     }
 
     private void drawHeader(DrawContext ctx, int mx, int my) {
@@ -522,7 +552,10 @@ public final class ClickGui extends Screen {
                 float on = an(m, m.enabled);
                 text(ctx, m.name, px + 12, ry + 7, A(Gfx.lerpArgb(Theme.soft(), 0xFFFFFFFF, on)));
                 sw(ctx, px + pw - 38, ry + 3, m, m.enabled);
-                if (hover && mx < px + pw - 44) hoverModule = m;
+                if (hover) {
+                    hoverSoundModule = m;
+                    if (mx < px + pw - 44) hoverModule = m;
+                }
             }
         }
         ctx.disableScissor();
@@ -806,6 +839,8 @@ public final class ClickGui extends Screen {
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
         layout();
+        mx = (mx - width / 2.0) / guiScale + width / 2.0;
+        my = (my - height / 2.0) / guiScale + height / 2.0;
         textFocus = null;
 
         // window buttons
@@ -964,6 +999,8 @@ public final class ClickGui extends Screen {
 
     @Override
     public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
+        mx = (mx - width / 2.0) / guiScale + width / 2.0;
+        my = (my - height / 2.0) / guiScale + height / 2.0;
         if (dragNum != null) {
             dragNum.setFraction((mx - dragX0) / dragW);
             return true;
@@ -985,6 +1022,8 @@ public final class ClickGui extends Screen {
     @Override
     public boolean mouseScrolled(double mx, double my, double hAmount, double vAmount) {
         layout();
+        mx = (mx - width / 2.0) / guiScale + width / 2.0;
+        my = (my - height / 2.0) / guiScale + height / 2.0;
         if (minimized) return true;
         if (page == Page.MODULES) {
             scrollTarget = Math.max(0, Math.min(maxScroll(), scrollTarget - (int) (vAmount * 28)));

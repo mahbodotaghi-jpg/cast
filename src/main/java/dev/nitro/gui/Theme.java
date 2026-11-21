@@ -12,7 +12,8 @@ public final class Theme {
 
     public enum Preset {
         //     label       blurb                       accent1   accent2   winTop    winBot    backTop   backBot   text      dim       track     faint
-        OCEAN("Ocean", "Cool blue and teal (default)", 0x38BDF8, 0x2DD4BF, 0x0F1C2B, 0x08121C, 0x040A12, 0x06131F, 0xEAF6FF, 0x7F9BB3, 0x2A3F55, 0x50677D),
+        VIOLET("Violet", "Dark panels with lavender accents", 0x9B6BFF, 0xD16BFF, 0x191122, 0x0B0713, 0x080510, 0x100817, 0xF5F0FF, 0x9A8DAF, 0x382845, 0x625276),
+        OCEAN("Ocean", "Cool blue and teal", 0x38BDF8, 0x2DD4BF, 0x0F1C2B, 0x08121C, 0x040A12, 0x06131F, 0xEAF6FF, 0x7F9BB3, 0x2A3F55, 0x50677D),
         SUNSET("Sunset", "Rose into amber", 0xFB7185, 0xFBBF24, 0x261521, 0x140A12, 0x0C0508, 0x1A0A10, 0xFFF1F0, 0xB0899A, 0x4A2E3E, 0x7A5566),
         EMERALD("Emerald", "Green and lime", 0x34D399, 0xA3E635, 0x12211A, 0x08120D, 0x030A06, 0x061510, 0xEEFFF6, 0x7FA394, 0x2A4A3C, 0x52705F),
         CRIMSON("Crimson", "Red and orange", 0xEF4444, 0xF97316, 0x231416, 0x0F0A0B, 0x0A0405, 0x160708, 0xFFF0F0, 0xA38888, 0x4A2A2A, 0x755555),
@@ -45,27 +46,20 @@ public final class Theme {
         }
     }
 
-    public static final Setting.Choice<Preset> PRESET = new Setting.Choice<>("Preset", Preset.OCEAN, Preset.class);
+    public static final Setting.Choice<Preset> PRESET = new Setting.Choice<>("Preset", Preset.VIOLET, Preset.class);
     public static final Setting.Bool ANIMATED = new Setting.Bool("Animated accent", true);
+    public static final Setting.Bool HOVER_SOUND = new Setting.Bool("Module hover sound", true);
+    public static final Setting.Num HOVER_VOLUME = new Setting.Num("Hover sound volume", 0.35, 0.0, 1.0, 0.05);
     public static final Setting.Color CUSTOM_A1 = new Setting.Color("Custom accent 1", 0xFF5CAA);
     public static final Setting.Color CUSTOM_A2 = new Setting.Color("Custom accent 2", 0xFFD166);
 
-    public enum GuiLayout {
-        PANEL("Panel (all categories)"), DROPDOWN("Dropdown (one category)");
-        private final String label;
-        GuiLayout(String label) { this.label = label; }
-        @Override public String toString() { return label; }
-    }
-
-    public static final Setting.Choice<GuiLayout> GUI_LAYOUT =
-            new Setting.Choice<>("GUI layout", GuiLayout.PANEL, GuiLayout.class);
-
-    private static final List<Setting<?>> ALL = List.<Setting<?>>of(PRESET, ANIMATED, CUSTOM_A1, CUSTOM_A2, GUI_LAYOUT);
-    private static final List<Setting<?>> SHOWN = List.<Setting<?>>of(ANIMATED, CUSTOM_A1, CUSTOM_A2, GUI_LAYOUT);
+    private static final List<Setting<?>> ALL = List.<Setting<?>>of(PRESET, ANIMATED, HOVER_SOUND, HOVER_VOLUME, CUSTOM_A1, CUSTOM_A2);
+    private static final List<Setting<?>> SHOWN = List.<Setting<?>>of(ANIMATED, CUSTOM_A1, CUSTOM_A2);
 
     static {
         CUSTOM_A1.showIf(Theme::isCustom);
         CUSTOM_A2.showIf(Theme::isCustom);
+        HOVER_VOLUME.showIf(HOVER_SOUND::on);
     }
 
     /** Settings shown in the right-hand pane of the Themes tab. */

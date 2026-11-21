@@ -9,11 +9,7 @@
     "HeldItemRendererMixin",
     "EntityMixin",
     "SimpleOptionAccessor",
-    "GameRendererMixin",
-    "InGameHudMixin",
-    "ItemStackMixin",
-    "ItemRendererMixin",
-    "ItemMixin"
+    "GameRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

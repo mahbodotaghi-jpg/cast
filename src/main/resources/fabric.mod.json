@@ -3,7 +3,7 @@
   "id": "nitro",
   "version": "${version}",
   "name": "NITRO",
-  "description": "Client utility mod for Minecraft 1.21.4 with ClickGUI, Custom Sky, Custom Accessories, Custom Glint, Custom Crosshair, Custom FOV, Free Look, Jump Circles, Custom Animation, HUD tools, ESP visuals and inventory utilities.",
+  "description": "NITRO client-side utility mod for Minecraft 1.21.4 with a configurable ClickGUI, Custom Sky, Custom FOV, Free Look, Jump Circles, Custom Animation, HUD tools, ESP visuals and inventory utilities.",
   "authors": [
     "you"
   ],

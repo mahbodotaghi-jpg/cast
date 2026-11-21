@@ -1,6 +1,6 @@
-# NITRO (new build, part 1)
+# NITRO – Original category-panel GUI restored
 
-Fabric client mod for Minecraft 1.21.4. Contains: ClickGUI, Light Detector, Base Finder (with Sus Chunk Finder).
+Fabric client mod for Minecraft 1.21.4. Contains the original NITRO ClickGUI layout with a separate panel for each category (Combat, Render, Visuals, Movement, World, and HUD), plus the current NITRO modules.
 AutoBuild is **not** in this drop yet.
 
 ## Build
@@ -9,9 +9,7 @@ the jar from the run's **Artifacts** (`nitro-jar`). If the build fails, send me 
 If `fabric_version` can't be resolved, set it to the newest `+1.21.4` Fabric API version in `gradle.properties`.
 
 ## Use
-Right Shift opens the ClickGUI. Rail on the left (star = favourites), modules in the middle, settings on the right.
-In the settings pane: Enabled, Shortcut (click, then press a key; Backspace clears), Favourite, then module settings.
-Settings are saved to `config/nitro.json` when the GUI closes and on game exit.
+Right Shift opens the ClickGUI. The left sidebar jumps to a category; the centre shows separate category panels arranged in two scrollable columns; the header search filters modules. Click a module name to open its settings, or use its switch to enable / disable it. Themes and Settings are at the bottom of the sidebar. Settings are saved to `config/nitro.json` when the GUI closes and on game exit.
 
 ## Light Detector
 Highlights loaded block light below Y=0 that is brighter than the sky light in the same cell. Denoise filter, colour by
@@ -131,12 +129,8 @@ New **Themes** tab at the bottom of the left rail. Click a preset to apply it in
 Crimson, Sakura, Midnight, or Custom (two RGB accent colours). "Animated accent" turns the moving gradient on or off.
 Saved in `config/nitro.json` under `theme`.
 
-## GUI v13 (panel layout)
-New ClickGUI layout: header (logo, search, minimize, close), category sidebar with Settings / Themes / Unload,
-and a grid of category panels with a switch per module. Click a module name for its settings page
-(Esc or "< Back" returns), right click or use the switch to toggle. Unload disables every module and closes the GUI.
-
-v13: removed Favorites, the Nitro theme (default is now Ocean), Swing Animation and the Unload button; new Custom Sky scenes.
+## GUI v22 (category panels restored)
+The original NITRO panel-style ClickGUI is restored. Combat, Render, Visuals, Movement, World, and HUD each appear in their own panel, arranged in two independently stacked columns with one shared scroll area. The category rail jumps to a panel, search filters modules, clicking a module opens its settings, and the switch toggles it. The Violet theme remains the default.
 
 
 ## v16 updates
@@ -148,23 +142,22 @@ v13: removed Favorites, the Nitro theme (default is now Ocean), Swing Animation 
 Build remains available through the `.github/workflows/build.yml` workflow: push the project or run the workflow manually, then download the `nitro-jar` artifact from Actions.
 
 
-## NITRO v0.1.8 visual update
+## NITRO v0.1.10 – category panel GUI restored
 
-New/updated modules: Custom Accessories (client-side tool glint finishes), Custom Glint, Custom Crosshair, Custom FOV, Free Look, Jump Circles, and Custom Animation. The ClickGUI supports a 67-inspired Panel layout (all categories in columns) and Dropdown layout (one selected category); switch it in Themes > GUI layout. The Galaxy Sky Saturn now uses a front-hemisphere 3D mesh, smoother atmospheric bands, ring divisions, and a subtle ring shadow to avoid the former overlapping-disc artifact.
+This source update keeps **Custom Accessories / Custom Tools**, **Custom Glint**, and **Custom Crosshair** removed, including their classes, rendering hooks, and bundled galaxy tool resources.
 
-The visual effects are client-side. This archive is source code; build it with the included GitHub Actions workflow or Gradle 8.12 and Java 21.
+The Right Shift ClickGUI is reverted to NITRO’s original category-panel layout. Each category is displayed in its own panel: Combat, Render, Visuals, Movement, World, and HUD. Panels are arranged in two independently stacked columns; the shared scroll area and category quick-jump rail make every section accessible. The earlier three-column Prestige-inspired board and its category-layout choice have been removed.
 
+The Violet theme remains the default. Minecraft version: 1.21.4; Java 21; Fabric.
 
-## Custom Accessories (client-only)
+## Build
 
-Enable **Visuals → Custom Accessories**, choose Galaxy / Rainbow / Aurora / Gold, and keep **Show shimmer on tools** enabled. The client adds a cosmetic shimmer to swords, pickaxes, axes, shovels, hoes, the mace and trident, including tools without enchantments. It only changes local rendering; it does not edit ItemStack components, NBT, inventory contents, or network packets. The vanilla tool texture remains visible underneath the coloured shimmer.
-
-
-## Custom Accessories: Galaxy Tools
-
-The Custom Accessories module controls a built-in client-only resource pack named **NITRO Galaxy Tools**. When the module is enabled, the resource pack is activated and Minecraft reloads local resources; when disabled, the pack is removed. It replaces the vanilla textures for wooden, stone, iron, golden, diamond and netherite pickaxes, axes, shovels and hoes. The Diamond Pickaxe texture is based on the user's supplied galaxy-pickaxe reference. This is visual-only: it does not alter item stacks, NBT, durability, attributes, inventory contents or network traffic.
+Push this project to GitHub and let `.github/workflows/build.yml` run, or use Gradle 8.12 with Java 21 and run `gradle build`. The built mod JAR is placed in `build/libs/`.
 
 
-## Custom Accessories: Galaxy Tools
+## v0.1.11 UI polish
 
-The Custom Accessories module controls a built-in client-only resource pack named **NITRO Galaxy Tools**. When the module is enabled, the resource pack is activated and Minecraft reloads local resources; when disabled, the pack is removed. It replaces the vanilla textures for wooden, stone, iron, golden, diamond and netherite pickaxes, axes, shovels and hoes. The Diamond Pickaxe texture is based on the user's supplied galaxy-pickaxe reference. This is visual-only: it does not alter item stacks, NBT, durability, attributes, inventory contents or network traffic.
+- Added a fade, slide and gentle scale-in transition when opening the ClickGUI.
+- Added a soft custom UI hover sound when the pointer enters a module row.
+- Added **Settings → Module hover sound** and **Hover sound volume** controls. The volume control appears only while the sound is enabled.
+- The hover effect is local to the client and does not send packets.
