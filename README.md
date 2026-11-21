@@ -79,7 +79,10 @@ Shortcut (keybind) row, and save their settings to `config/nitro.json`.
 - **Choice settings** in the ClickGUI now list every option; click the one you want (works for the Custom Sky "Sky" picker and all other choice settings).
 
 ## Added in this drop (v4)
-- **Clear Weather** (Render): hides rain, snow and thunder on your screen only (and the sky darkening that comes with them).
+- **Weather Control** (Render): replaces Clear Weather. Pick Clear, Rain, Thunder or Snow, only on your screen. Snow drifts
+  snowflakes around you in every biome (Rain/Thunder follow the biome: no rain visuals in deserts).
+- **Aura** (Render): a halo above your head, spinning rings, or flapping wings, in a custom colour or rainbow. Third person only.
+- Jump Circles removed.
 - **Keystrokes** (HUD): WASD, space and mouse buttons with CPS. Follows your key bindings.
 - **Armor HUD** (HUD): armor pieces (optionally held items) with durability bars and a durability percentage; horizontal or vertical.
 - Keystrokes and Armor HUD have a corner picker (Position), X/Y offsets and scale.

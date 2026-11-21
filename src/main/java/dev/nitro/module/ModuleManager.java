@@ -20,11 +20,11 @@ import dev.nitro.modules.BaseFinder;
 import dev.nitro.modules.BlockEsp;
 import dev.nitro.modules.SeedOreEsp;
 import dev.nitro.modules.ArmorHud;
-import dev.nitro.modules.ClearWeather;
+import dev.nitro.modules.Aura;
+import dev.nitro.modules.WeatherControl;
 import dev.nitro.modules.CustomSky;
 import dev.nitro.modules.CustomAnimation;
 import dev.nitro.modules.CustomFov;
-import dev.nitro.modules.JumpCircles;
 import dev.nitro.modules.FreeLook;
 import dev.nitro.modules.Freecam;
 import dev.nitro.modules.Fullbright;
@@ -68,7 +68,7 @@ public final class ModuleManager {
         modules.add(new CustomSky());
         modules.add(new CustomAnimation());
         modules.add(new CustomFov());
-        modules.add(new JumpCircles());
+        modules.add(new Aura());
         modules.add(new FreeLook());
         modules.add(new AutoTotem());
         modules.add(new HoverTotem());
@@ -84,7 +84,7 @@ public final class ModuleManager {
         modules.add(new SmashAim());
         modules.add(new FallReset());
         modules.add(new ElytraSwap());
-        modules.add(new ClearWeather());
+        modules.add(new WeatherControl());
         modules.add(new MotionBlur()); // must stay before the HUD modules so their panels are drawn after the blur
         modules.add(new TargetHud());
         modules.add(new SpotifyHud());
