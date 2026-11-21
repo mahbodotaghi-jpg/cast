@@ -18,7 +18,7 @@ public final class Keystrokes extends Module {
     private final Setting.Bool space = new Setting.Bool("Space bar", true);
     private final Setting.Bool mouse = new Setting.Bool("Mouse buttons + CPS", true);
     private final Setting.Choice<Anchor> anchor = new Setting.Choice<>("Position", Anchor.BOTTOM_LEFT, Anchor.class);
-    private final Setting.Num scale = new Setting.Num("Scale", 1.0, 0.6, 2.0, 0.05);
+    private final Setting.Num scale = new Setting.Num("Scale", 1.0, 0.4, 3.0, 0.05);
     private final Setting.Num offX = new Setting.Num("X offset", 8, 0, 1200, 1);
     private final Setting.Num offY = new Setting.Num("Y offset", 40, 0, 700, 1);
     private final Setting.Color tint = new Setting.Color("Key colour", 0x20242C);
@@ -117,6 +117,11 @@ public final class Keystrokes extends Module {
         if (space.on()) h += g + 14;
         if (mouse.on()) h += g + 26;
         return new int[]{w, h};
+    }
+
+    @Override
+    public Setting.Num hudScale() {
+        return scale;
     }
 
     @Override

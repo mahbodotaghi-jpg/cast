@@ -2,10 +2,15 @@
 
 - **HUD Editor** (ClickGUI sidebar, bottom): drag Target HUD, Spotify HUD, Keystrokes and Armor HUD anywhere. Snaps to the
   screen edges / centre (hold Alt to disable), arrow keys nudge (Shift = 5px), right click toggles a panel, Esc saves.
+  Resize with the square handle in a panel's bottom-right corner, the mouse wheel over a panel, or + / -.
+  Spotify HUD now has a Scale setting too.
 - **Anchor Macro** rewritten as a clean charge -> explode loop that reads the anchor's real charge level each step.
 - Module hover sound removed (code, setting, sound asset).
 - **Stun Slam** (Combat): falling onto a blocking player, your hit is made with a hotbar axe to break the shield, then
   a few ticks later the same target gets a mace hit, and your slot comes back. Needs an axe and a mace in the hotbar.
+- **No Render** (Render): FPS booster. Turns down particles, clouds, entity shadows, graphics quality, smooth lighting,
+  biome blending, entity distance and (optionally) render distance. Every option is put back when you turn a part off,
+  disable the module or close the game.
 - Spotify HUD now has X / Y offset settings like the other HUD panels.
 
 # NITRO – Original category-panel GUI restored

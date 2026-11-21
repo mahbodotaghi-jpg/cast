@@ -3,6 +3,7 @@ package dev.nitro.gui;
 import dev.nitro.Config;
 import dev.nitro.module.Module;
 import dev.nitro.module.ModuleManager;
+import dev.nitro.settings.Setting;
 import dev.nitro.util.ColorUtil;
 import dev.nitro.util.Gfx;
 import net.minecraft.client.gui.DrawContext;
@@ -15,8 +16,9 @@ import java.util.List;
 
 /**
  * HUD editor: every movable HUD panel (Target HUD, Spotify HUD, Keystrokes, Armor HUD) gets a frame you can drag.
- * Panels snap to the screen edges and centre lines (hold Alt to turn snapping off). Arrow keys nudge the panel under
- * the cursor (Shift = 5px). Right click toggles a panel on or off. Esc / Enter saves and goes back to the ClickGUI.
+ * Panels snap to the screen edges and centre lines (hold Alt to turn snapping off). Arrow keys nudge the selected
+ * panel (Shift = 5px). To resize: drag the square handle in the bottom-right corner, scroll the mouse wheel over a
+ * panel, or press + / - . Right click toggles a panel on or off. Esc / Enter saves and goes back to the ClickGUI.
  */
 public final class HudEditor extends Screen {
     private static final int SNAP = 5;
@@ -24,6 +26,9 @@ public final class HudEditor extends Screen {
     private final Screen parent;
     private final List<Module> items = new ArrayList<>();
     private Module drag;
+    private Module resize;
+    private double resizeStartScale;
+    private int resizeX0, resizeY0, resizeW0;
     private int grabDX, grabDY;
     private Module picked;
     private float time;
@@ -49,6 +54,22 @@ public final class HudEditor extends Screen {
         return null;
     }
 
+    private boolean onHandle(Module m, double mx, double my) {
+        if (m.hudScale() == null) return false;
+        int[] b = m.hudBounds(width, height);
+        int hx = b[0] + b[2] - 5, hy = b[1] + b[3] - 5;
+        return mx >= hx - 2 && mx < hx + 10 && my >= hy - 2 && my < hy + 10;
+    }
+
+    /** Sets a panel's scale while keeping its top-left corner where it is. */
+    private void setScale(Module m, double value) {
+        Setting.Num sc = m.hudScale();
+        if (sc == null) return;
+        int[] b = m.hudBounds(width, height);
+        sc.set(value);
+        m.hudMoveTo(b[0], b[1], width, height);
+    }
+
     private int accent(float t) {
         float s = 0.5f + 0.5f * (float) Math.sin(time * 1.6f + t * 2.6f);
         return ColorUtil.lerp(Theme.a1(), Theme.a2(), s);
@@ -63,7 +84,7 @@ public final class HudEditor extends Screen {
         ctx.fill(width / 2, 0, width / 2 + 1, height, 0x22FFFFFF);
         ctx.fill(0, height / 2, width, height / 2 + 1, 0x22FFFFFF);
 
-        Module hover = drag == null ? at(mx, my) : null;
+        Module hover = drag == null && resize == null ? at(mx, my) : null;
         for (Module m : items) {
             int[] b = m.hudBounds(width, height);
             boolean active = m == drag || m == hover;
@@ -72,6 +93,12 @@ public final class HudEditor extends Screen {
                 Gfx.roundFill(ctx, b[0], b[1], b[2], b[3], 4, ColorUtil.argb(accent(0.2f), active ? 0.22f : 0.10f));
             }
             Gfx.roundBorder(ctx, b[0], b[1], b[2], b[3], 4, col);
+            if (m.hudScale() != null) {
+                int hx = b[0] + b[2] - 5, hy = b[1] + b[3] - 5;
+                boolean hot = m == resize || (resize == null && onHandle(m, mx, my));
+                ctx.fill(hx, hy, hx + 8, hy + 8, hot ? 0xFFFFFFFF : ColorUtil.argb(accent(0.6f), m.enabled ? 1f : 0.5f));
+                ctx.fill(hx + 1, hy + 1, hx + 7, hy + 7, hot ? ColorUtil.argb(accent(0.6f), 1f) : 0xAA101216);
+            }
 
             String label = m.enabled ? m.name : m.name + " (off)";
             int tw = textRenderer.getWidth(label);
@@ -80,16 +107,18 @@ public final class HudEditor extends Screen {
             ctx.drawText(textRenderer, label, lx, ly, m.enabled ? 0xFFFFFFFF : 0xFF9AA0AA, true);
         }
 
-        Module info = drag != null ? drag : hover;
+        Module info = resize != null ? resize : drag != null ? drag : hover;
         if (info != null) {
             int[] b = info.hudBounds(width, height);
             String pos = "x " + b[0] + "   y " + b[1];
+            Setting.Num sc = info.hudScale();
+            if (sc != null) pos += "   size " + Math.round(sc.d() * 100) + "%";
             ctx.drawCenteredTextWithShadow(textRenderer, pos, width / 2, height / 2 + 6, 0xFFFFFFFF);
         }
 
         ctx.drawCenteredTextWithShadow(textRenderer, "HUD editor", width / 2, 10, 0xFFFFFFFF);
         ctx.drawCenteredTextWithShadow(textRenderer,
-                "Drag a panel to move it   |   Alt: no snapping   |   Arrow keys: nudge   |   Right click: on / off   |   Esc: done",
+                "Drag to move   |   Corner square or mouse wheel or + / -: resize   |   Alt: no snapping   |   Arrows: nudge   |   Right click: on / off   |   Esc: done",
                 width / 2, 22, 0xFFB8BEC8);
         if (items.isEmpty()) {
             ctx.drawCenteredTextWithShadow(textRenderer, "No movable HUD panels.", width / 2, height / 2, 0xFFFFFFFF);
@@ -98,6 +127,22 @@ public final class HudEditor extends Screen {
 
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
+        if (button == 0) {
+            for (int i = items.size() - 1; i >= 0; i--) {
+                Module r = items.get(i);
+                if (!onHandle(r, mx, my)) continue;
+                int[] b = r.hudBounds(width, height);
+                resize = r;
+                picked = r;
+                resizeStartScale = r.hudScale().d();
+                resizeX0 = b[0];
+                resizeY0 = b[1];
+                resizeW0 = Math.max(1, b[2]);
+                items.remove(r);
+                items.add(r);
+                return true;
+            }
+        }
         Module m = at(mx, my);
         if (m != null) {
             if (button == 1) {
@@ -121,6 +166,15 @@ public final class HudEditor extends Screen {
 
     @Override
     public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
+        if (resize != null && button == 0) {
+            int w = Math.max(12, (int) mx - resizeX0);
+            double s = resizeStartScale * w / resizeW0;
+            Setting.Num sc = resize.hudScale();
+            s = Math.max(sc.min, Math.min(sc.max, s));
+            sc.set(s);
+            resize.hudMoveTo(resizeX0, resizeY0, width, height);
+            return true;
+        }
         if (drag != null && button == 0) {
             int[] b = drag.hudBounds(width, height);
             int w = b[2], h = b[3];
@@ -139,8 +193,9 @@ public final class HudEditor extends Screen {
 
     @Override
     public boolean mouseReleased(double mx, double my, int button) {
-        if (button == 0 && drag != null) {
+        if (button == 0 && (drag != null || resize != null)) {
             drag = null;
+            resize = null;
             Config.save();
             return true;
         }
@@ -162,7 +217,28 @@ public final class HudEditor extends Screen {
     }
 
     @Override
+    public boolean mouseScrolled(double mx, double my, double horizontal, double vertical) {
+        Module m = at(mx, my);
+        if (m == null) m = picked;
+        if (m == null || m.hudScale() == null || vertical == 0) return super.mouseScrolled(mx, my, horizontal, vertical);
+        picked = m;
+        setScale(m, m.hudScale().d() + (vertical > 0 ? 0.05 : -0.05));
+        Config.save();
+        return true;
+    }
+
+    @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_EQUAL || keyCode == GLFW.GLFW_KEY_KP_ADD
+                || keyCode == GLFW.GLFW_KEY_MINUS || keyCode == GLFW.GLFW_KEY_KP_SUBTRACT) {
+            boolean up = keyCode == GLFW.GLFW_KEY_EQUAL || keyCode == GLFW.GLFW_KEY_KP_ADD;
+            Module m = picked;
+            if (m != null && m.hudScale() != null) {
+                setScale(m, m.hudScale().d() + (up ? 0.05 : -0.05));
+                Config.save();
+            }
+            return true;
+        }
         if (keyCode == GLFW.GLFW_KEY_ESCAPE || keyCode == GLFW.GLFW_KEY_ENTER) {
             close();
             return true;

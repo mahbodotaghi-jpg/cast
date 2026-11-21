@@ -83,6 +83,11 @@ public abstract class Module {
         return new int[]{0, 0, 0, 0};
     }
 
+    /** The scale setting of a resizable HUD panel (used by the HUD editor), or null if it cannot be resized. */
+    public Setting.Num hudScale() {
+        return null;
+    }
+
     /** Moves the HUD panel so its top-left corner lands on (x, y). */
     public void hudMoveTo(int x, int y, int screenW, int screenH) {}
 }

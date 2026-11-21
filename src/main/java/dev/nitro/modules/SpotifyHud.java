@@ -56,6 +56,7 @@ public final class SpotifyHud extends Module {
     private final Setting.Choice<Anchor> pos = new Setting.Choice<>("Position", Anchor.BOTTOM_LEFT, Anchor.class);
     private final Setting.Num offX = new Setting.Num("X offset", 8, 0, 1200, 1);
     private final Setting.Num offY = new Setting.Num("Y offset", 8, 0, 700, 1);
+    private final Setting.Num scale = new Setting.Num("Scale", 1.0, 0.5, 3.0, 0.05);
     private int hudH = 60;
     private final Setting.Choice<Gfx.PanelStyle> style = new Setting.Choice<>("Style", Gfx.PanelStyle.GLASS, Gfx.PanelStyle.class);
     private final Setting.Num width = new Setting.Num("Width", 200, 150, 300, 5);
@@ -111,7 +112,7 @@ public final class SpotifyHud extends Module {
 
     public SpotifyHud() {
         super("Spotify HUD", "Now-playing card and song title in the sky.", Category.HUD);
-        add(showHud, pos, offX, offY, style, width, compact, showArt, artSize, showAlbum, showProgress, equalizer, artColour, hideIdle,
+        add(showHud, pos, offX, offY, scale, style, width, compact, showArt, artSize, showAlbum, showProgress, equalizer, artColour, hideIdle,
                 hidePaused, poll, tint, opacity, accent);
         add(sky, skyMode, skyHeight, skyOrbit, skyDist, skySize, skyColor, skyCustom, skyProgress, skyDepth);
         add(lyrics, lyricSize, lyricGap, lyricContext, lyricFloat, lyricOffset);
@@ -125,6 +126,7 @@ public final class SpotifyHud extends Module {
         pos.showIf(showHud::on);
         offX.showIf(showHud::on);
         offY.showIf(showHud::on);
+        scale.showIf(showHud::on);
         skyOrbit.showIf(() -> skyMode.value == SkyMode.ORBIT);
         skyCustom.showIf(() -> skyColor.value == SkyColor.CUSTOM);
     }
@@ -246,6 +248,15 @@ public final class SpotifyHud extends Module {
 
     @Override
     public void renderHud(DrawContext ctx) {
+        ctx.getMatrices().push();
+        try {
+            drawHud(ctx);
+        } finally {
+            ctx.getMatrices().pop();
+        }
+    }
+
+    private void drawHud(DrawContext ctx) {
         long nowNs = System.nanoTime();
         float dt = lastNs == 0 ? 0.016f : Math.min(0.1f, (nowNs - lastNs) / 1e9f);
         lastNs = nowNs;
@@ -288,8 +299,14 @@ public final class SpotifyHud extends Module {
 
         hudH = H;
         int sw = ctx.getScaledWindowWidth(), sh = ctx.getScaledWindowHeight();
-        int x = pos.value.x(sw, W, offX.i());
-        int y = pos.value.y(sh, H, offY.i());
+        float hudSc = scale.f();
+        int x = pos.value.x(sw, (int) (W * hudSc), offX.i());
+        int y = pos.value.y(sh, (int) (H * hudSc), offY.i());
+        // everything below is drawn at (0, 0) inside a scaled and translated matrix
+        ctx.getMatrices().translate(x, y, 0f);
+        ctx.getMatrices().scale(hudSc, hudSc, 1f);
+        x = 0;
+        y = 0;
 
         int cur = curAccent;
         int tintMix = artColour.on() && haveArt ? ColorUtil.lerp(tint.rgb(), cur, 0.2f) : tint.rgb();
@@ -518,18 +535,25 @@ public final class SpotifyHud extends Module {
     }
 
     @Override
+    public Setting.Num hudScale() {
+        return scale;
+    }
+
+    @Override
     public boolean movable() {
         return true;
     }
 
     @Override
     public int[] hudBounds(int sw, int sh) {
-        int w = width.i(), h = hudH;
+        float sc = scale.f();
+        int w = (int) (width.i() * sc), h = (int) (hudH * sc);
         return new int[]{pos.value.x(sw, w, offX.i()), pos.value.y(sh, h, offY.i()), w, h};
     }
 
     @Override
     public void hudMoveTo(int x, int y, int sw, int sh) {
-        Anchor.place(pos, offX, offY, x, y, width.i(), hudH, sw, sh);
+        int[] b = hudBounds(sw, sh);
+        Anchor.place(pos, offX, offY, x, y, b[2], b[3], sw, sh);
     }
 }

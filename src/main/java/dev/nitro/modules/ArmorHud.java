@@ -26,7 +26,7 @@ public final class ArmorHud extends Module {
     private final Setting.Choice<Anchor> anchor = new Setting.Choice<>("Position", Anchor.BOTTOM_RIGHT, Anchor.class);
     private final Setting.Bool hands = new Setting.Bool("Show held items", false);
     private final Setting.Bool percent = new Setting.Bool("Durability %", true);
-    private final Setting.Num scale = new Setting.Num("Scale", 1.0, 0.6, 2.0, 0.05);
+    private final Setting.Num scale = new Setting.Num("Scale", 1.0, 0.4, 3.0, 0.05);
     private final Setting.Num offX = new Setting.Num("X offset", 8, 0, 1200, 1);
     private final Setting.Num offY = new Setting.Num("Y offset", 56, 0, 700, 1);
 
@@ -101,6 +101,11 @@ public final class ArmorHud extends Module {
             }
         }
         return n > 0 ? n : (hands.on() ? 6 : 4);
+    }
+
+    @Override
+    public Setting.Num hudScale() {
+        return scale;
     }
 
     @Override

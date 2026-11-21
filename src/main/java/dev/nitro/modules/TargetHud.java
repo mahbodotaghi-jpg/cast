@@ -28,7 +28,7 @@ public final class TargetHud extends Module {
     private final Setting.Num range = new Setting.Num("Nearest range", 24, 4, 128, 1);
     private final Setting.Num hold = new Setting.Num("Hold time (s)", 2, 0, 10, 0.5);
     private final Setting.Choice<Gfx.PanelStyle> style = new Setting.Choice<>("Style", Gfx.PanelStyle.GLASS, Gfx.PanelStyle.class);
-    private final Setting.Num scale = new Setting.Num("Scale", 1.0, 0.6, 1.8, 0.05);
+    private final Setting.Num scale = new Setting.Num("Scale", 1.0, 0.4, 3.0, 0.05);
     private final Setting.Bool head = new Setting.Bool("Show head", true);
     private final Setting.Bool armor = new Setting.Bool("Show armor & items", true);
     private final Setting.Bool distance = new Setting.Bool("Show distance & armor value", true);
@@ -230,6 +230,11 @@ public final class TargetHud extends Module {
             }
         }
         ms.pop();
+    }
+
+    @Override
+    public Setting.Num hudScale() {
+        return scale;
     }
 
     @Override

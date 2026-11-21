@@ -34,6 +34,7 @@ public class NitroClient implements ClientModInitializer {
         ClientLifecycleEvents.CLIENT_STOPPING.register(mc -> {
             Config.save();
             dev.nitro.modules.Fullbright.restore();
+            dev.nitro.modules.NoRender.restore();
         });
     }
 }

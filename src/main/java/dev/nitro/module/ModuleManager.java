@@ -28,6 +28,7 @@ import dev.nitro.modules.JumpCircles;
 import dev.nitro.modules.FreeLook;
 import dev.nitro.modules.Freecam;
 import dev.nitro.modules.Fullbright;
+import dev.nitro.modules.NoRender;
 import dev.nitro.modules.Keystrokes;
 import dev.nitro.modules.LightDetector;
 import dev.nitro.modules.MotionBlur;
@@ -63,6 +64,7 @@ public final class ModuleManager {
         modules.add(new BlockEsp());
         modules.add(new PlayerEsp());
         modules.add(new Fullbright());
+        modules.add(new NoRender());
         modules.add(new CustomSky());
         modules.add(new CustomAnimation());
         modules.add(new CustomFov());
