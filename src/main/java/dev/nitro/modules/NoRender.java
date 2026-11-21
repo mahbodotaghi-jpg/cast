@@ -2,9 +2,6 @@ package dev.nitro.modules;
 
 import dev.nitro.module.Module;
 import dev.nitro.settings.Setting;
-import net.minecraft.client.option.CloudRenderMode;
-import net.minecraft.client.option.GraphicsMode;
-import net.minecraft.client.option.ParticlesMode;
 import net.minecraft.client.option.SimpleOption;
 
 import java.util.HashMap;
@@ -62,10 +59,10 @@ public final class NoRender extends Module {
     private void apply() {
         if (mc.options == null) return;
         var o = mc.options;
-        drive("particles", particles.on(), o.getParticles(), ParticlesMode.MINIMAL);
-        drive("clouds", clouds.on(), o.getCloudRenderMode(), CloudRenderMode.OFF);
+        driveEnum("particles", particles.on(), o.getParticles(), "MINIMAL");
+        driveEnum("clouds", clouds.on(), o.getCloudRenderMode(), "OFF");
         drive("shadows", shadows.on(), o.getEntityShadows(), false);
-        drive("graphics", fastGraphics.on(), o.getGraphicsMode(), GraphicsMode.FAST);
+        driveEnum("graphics", fastGraphics.on(), o.getGraphicsMode(), "FAST");
         drive("ao", smoothLight.on(), o.getAo(), false);
         drive("blend", biomeBlend.on(), o.getBiomeBlendRadius(), 0);
         drive("bob", bobbing.on(), o.getBobView(), false);
@@ -85,6 +82,15 @@ public final class NoRender extends Module {
             Runnable r = undo.remove(key);
             if (r != null) r.run();
         }
+    }
+
+    /** Same as {@link #drive}, for enum options: picks the constant by its name (no need to import the enum class). */
+    private <E extends Enum<E>> void driveEnum(String key, boolean on, SimpleOption<E> opt, String constant) {
+        E target = null;
+        for (E c : opt.getValue().getDeclaringClass().getEnumConstants()) {
+            if (c.name().equals(constant)) target = c;
+        }
+        drive(key, on && target != null, opt, target);
     }
 
     private void undoAll() {
