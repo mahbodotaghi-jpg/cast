@@ -81,7 +81,10 @@ Shortcut (keybind) row, and save their settings to `config/nitro.json`.
 ## Added in this drop (v4)
 - **Weather Control** (Render): replaces Clear Weather. Pick Clear, Rain, Thunder or Snow, only on your screen. Snow drifts
   snowflakes around you in every biome (Rain/Thunder follow the biome: no rain visuals in deserts).
-- **Aura** (Render): a halo above your head, spinning rings, or flapping wings, in a custom colour or rainbow. Third person only.
+- **Aura** (Render): halo, spinning rings and flapping wings - each has its own switch, so you can wear all three at once.
+  Custom colour or rainbow. Third person only.
+- **Free Look** fixed: the camera now orbits your player correctly in third person (it used to only rotate in place),
+  and it can switch you to third person while active.
 - Jump Circles removed.
 - **Keystrokes** (HUD): WASD, space and mouse buttons with CPS. Follows your key bindings.
 - **Armor HUD** (HUD): armor pieces (optionally held items) with durability bars and a durability percentage; horizontal or vertical.

@@ -2,6 +2,7 @@ package dev.nitro.modules;
 
 import dev.nitro.module.Module;
 import dev.nitro.settings.Setting;
+import net.minecraft.client.option.Perspective;
 
 /** Lets the local camera look around while the player's body yaw and pitch stay put. */
 public final class FreeLook extends Module {
@@ -9,10 +10,12 @@ public final class FreeLook extends Module {
     public float yaw, pitch;
     private boolean ready;
     private final Setting.Num sensitivity = new Setting.Num("Look sensitivity", 1.0, 0.2, 2.0, 0.1);
+    private final Setting.Bool thirdPerson = new Setting.Bool("Switch to third person while active", true);
+    private Perspective previous;
 
     public FreeLook() {
         super("Free Look", "Look around without rotating your player model.", Category.MOVEMENT);
-        add(sensitivity);
+        add(sensitivity, thirdPerson);
         INSTANCE = this;
     }
 
@@ -25,9 +28,17 @@ public final class FreeLook extends Module {
         yaw = mc.player.getYaw();
         pitch = mc.player.getPitch();
         ready = true;
+        if (thirdPerson.on() && mc.options != null) {
+            previous = mc.options.getPerspective();
+            if (previous.isFirstPerson()) mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+        }
     }
 
-    @Override public void onDisable() { ready = false; }
+    @Override public void onDisable() {
+        ready = false;
+        if (previous != null && mc.options != null) mc.options.setPerspective(previous);
+        previous = null;
+    }
 
     @Override public void onWorldChanged() {
         if (enabled) setEnabled(false);

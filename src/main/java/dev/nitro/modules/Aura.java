@@ -14,17 +14,11 @@ import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
 
 /**
- * Aura: a glowing halo above your head, spinning rings around your body, or a pair of flapping wings on your back.
+ * Aura: a glowing halo above your head, spinning rings around your body and a pair of flapping wings on your back -
+ * switch each one on or off separately, so you can wear all three together.
  * Drawn in the world, so you see it in third person (and Freecam); it stays hidden in first person.
  */
 public final class Aura extends Module {
-    public enum Style {
-        HALO("Halo"), RINGS("Rings"), WINGS("Wings");
-        private final String label;
-        Style(String l) { label = l; }
-        @Override public String toString() { return label; }
-    }
-
     public enum Tint {
         CUSTOM("Custom colour"), RAINBOW("Rainbow");
         private final String label;
@@ -32,7 +26,9 @@ public final class Aura extends Module {
         @Override public String toString() { return label; }
     }
 
-    private final Setting.Choice<Style> style = new Setting.Choice<>("Style", Style.HALO, Style.class);
+    private final Setting.Bool halo = new Setting.Bool("Halo", true);
+    private final Setting.Bool rings = new Setting.Bool("Rings", false);
+    private final Setting.Bool wings = new Setting.Bool("Wings", false);
     private final Setting.Choice<Tint> tint = new Setting.Choice<>("Colour mode", Tint.CUSTOM, Tint.class);
     private final Setting.Color custom = new Setting.Color("Colour", 0xFFD84D);
     private final Setting.Num size = new Setting.Num("Size", 1.0, 0.5, 2.5, 0.05);
@@ -42,8 +38,8 @@ public final class Aura extends Module {
     private final Setting.Num fillOpacity = new Setting.Num("Fill opacity", 30, 5, 80, 5);
 
     public Aura() {
-        super("Aura", "A halo, spinning rings or wings on your character (third person).", Category.RENDER);
-        add(style, tint, custom, size, speed, lineWidth, fill, fillOpacity);
+        super("Aura", "Halo, spinning rings and wings on your character - use any or all at once (third person).", Category.RENDER);
+        add(halo, rings, wings, tint, custom, size, speed, lineWidth, fill, fillOpacity);
         custom.showIf(() -> tint.value == Tint.CUSTOM);
         fillOpacity.showIf(fill::on);
     }
@@ -73,20 +69,18 @@ public final class Aura extends Module {
 
         RenderUtil.begin();
         RenderSystem.enableDepthTest(); // the aura sits in the world instead of showing through walls
-        switch (style.value) {
-            case HALO -> halo(m, bx, by + h + 0.3f + 0.03f * (float) Math.sin(t * 2.0), bz, t);
-            case RINGS -> rings(m, bx, by, bz, h, t);
-            case WINGS -> {
-                float yaw = MathHelper.lerpAngleDegrees(td, mc.player.prevBodyYaw, mc.player.bodyYaw);
-                wings(m, bx, by + h * 0.72f, bz, yaw, t);
-            }
+        if (halo.on()) haloRing(m, bx, by + h + 0.3f + 0.03f * (float) Math.sin(t * 2.0), bz, t);
+        if (rings.on()) ringsAround(m, bx, by, bz, h, t);
+        if (wings.on()) {
+            float yaw = MathHelper.lerpAngleDegrees(td, mc.player.prevBodyYaw, mc.player.bodyYaw);
+            wingPair(m, bx, by + h * 0.72f, bz, yaw, t);
         }
         RenderUtil.end();
     }
 
     // ------------------------------------------------------------ halo
 
-    private void halo(Matrix4f m, float cx, float cy, float cz, double t) {
+    private void haloRing(Matrix4f m, float cx, float cy, float cz, double t) {
         int seg = 48;
         float r1 = 0.30f * size.f(), r0 = r1 - 0.07f * size.f();
         int fa = ((int) (fillOpacity.d() * 2.55)) << 24;
@@ -123,7 +117,7 @@ public final class Aura extends Module {
 
     // ------------------------------------------------------------ rings
 
-    private void rings(Matrix4f m, float cx, float cy, float cz, float h, double t) {
+    private void ringsAround(Matrix4f m, float cx, float cy, float cz, float h, double t) {
         BufferBuilder b = RenderUtil.lines(lineWidth.f());
         int seg = 64;
         for (int k = 0; k < 3; k++) {
@@ -145,7 +139,7 @@ public final class Aura extends Module {
 
     // ------------------------------------------------------------ wings
 
-    private void wings(Matrix4f m, float rx, float ry, float rz, float yawDeg, double t) {
+    private void wingPair(Matrix4f m, float rx, float ry, float rz, float yawDeg, double t) {
         double yaw = Math.toRadians(yawDeg);
         float backX = (float) Math.sin(yaw), backZ = (float) -Math.cos(yaw);   // behind the body
         float rightX = (float) -Math.cos(yaw), rightZ = (float) -Math.sin(yaw); // to the player's right
